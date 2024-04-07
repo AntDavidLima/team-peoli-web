@@ -3,6 +3,7 @@ import { Icon } from "@iconify-icon/react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import { login } from "../signals/authentication";
 
 export const Route = createFileRoute("/login")({
 	component: Login,
@@ -107,8 +108,11 @@ function Login() {
 			</main>
 		</div>
 	);
-}
 
-function handleLogin() {
-	alert("Login");
+	async function handleLogin({ email, password }: LoginForm) {
+		await login({
+			email,
+			password,
+		});
+	}
 }
