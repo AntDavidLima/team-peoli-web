@@ -1,5 +1,5 @@
+import { api } from "@/lib/api";
 import { computed, effect, signal } from "@preact/signals";
-import axios from "axios";
 import { Cookies } from "react-cookie";
 
 interface LoginForm {
@@ -11,26 +11,32 @@ interface APIAuthenticateResponse {
 	auth_token: string;
 }
 
+interface CurrentUser {
+	authToken: string;
+}
+
 const cookies = new Cookies();
 
-export const currentUser = signal(null);
+export const currentUser = signal<CurrentUser | null>(null);
 
 export const isAuthenticated = computed(() => currentUser.value !== null);
 
 effect(() => {
-	const authToken = cookies.get("auth_token");
+	if (!currentUser.value) {
+		const authToken = cookies.get("auth_token");
 
-	currentUser.value = authToken || null;
+		currentUser.value = { authToken } || null;
+	} else {
+		api.defaults.headers.common["Authorization"] =
+			`Bearer ${currentUser.value.authToken}`;
+	}
 });
 
 export async function login({ email, password }: LoginForm) {
-	const { data } = await axios.post<APIAuthenticateResponse>(
-		`${import.meta.env.VITE_API_URL}/authentication`,
-		{
-			email,
-			password,
-		},
-	);
+	const { data } = await api.post<APIAuthenticateResponse>(`/authentication`, {
+		email,
+		password,
+	});
 
 	cookies.set("auth_token", data.auth_token, { sameSite: "strict" });
 }

@@ -1,5 +1,5 @@
-import type { APIError } from "@/app";
 import { toast } from "@/components/ui/use-toast";
+import { APIError } from "@/lib/api";
 import { isAuthenticated, login } from "@/signals/authentication";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
@@ -153,7 +153,7 @@ function Login() {
 				password,
 			});
 
-			router.history.push(redirect || "/");
+			router.history.push(redirect || "/student");
 		} catch (error) {
 			if (error instanceof AxiosError) {
 				const apiError = error.response?.data as APIError;
