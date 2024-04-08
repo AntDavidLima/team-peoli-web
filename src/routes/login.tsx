@@ -1,13 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Icon } from "@iconify-icon/react";
-import { useForm } from "react-hook-form";
+import type { APIError } from "@/app";
+import { toast } from "@/components/ui/use-toast";
+import { isAuthenticated, login } from "@/signals/authentication";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
+import { signal } from "@preact/signals";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { AxiosError } from "axios";
+import { useForm } from "react-hook-form";
 import * as yup from "yup";
-import { login } from "../signals/authentication";
-
-export const Route = createFileRoute("/login")({
-	component: Login,
-});
 
 const loginFormSchema = yup.object({
 	email: yup.string().email("E-mail inválido").required("Campo obrigatório"),
@@ -16,11 +16,32 @@ const loginFormSchema = yup.object({
 
 type LoginForm = yup.InferType<typeof loginFormSchema>;
 
+const loginSearchSchema = yup.object({
+	redirect: yup.string().optional(),
+});
+
+export const Route = createFileRoute("/login")({
+	component: Login,
+	validateSearch: (search) => loginSearchSchema.validateSync(search),
+	beforeLoad: () => {
+		if (isAuthenticated.value) {
+			throw redirect({
+				to: "/",
+			});
+		}
+	},
+});
+
+const passwordVisible = signal(false);
+
 function Login() {
+	const router = useRouter();
+	const { redirect } = Route.useSearch();
+
 	const {
+		handleSubmit,
 		register,
 		formState: { errors },
-		handleSubmit,
 	} = useForm<LoginForm>({
 		resolver: yupResolver(loginFormSchema),
 	});
@@ -38,8 +59,8 @@ function Login() {
 						/>
 					</h1>
 					<form
-						onSubmit={handleSubmit(handleLogin)}
 						class="flex flex-col gap-8 w-full max-w-80"
+						onSubmit={handleSubmit(handleLogin)}
 					>
 						<div class="flex flex-col gap-1">
 							<label
@@ -50,10 +71,10 @@ function Login() {
 								E-mail
 							</label>
 							<input
-								class="h-10 rounded p-1 drop-shadow-md focus:outline focus:outline-primary text-dark data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900"
-								data-invalid={errors.email}
+								class="text-input h-10 rounded p-1 drop-shadow-md focus:outline focus:outline-primary data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900"
 								id="email"
 								placeholder="seuemail@exemplo.com"
+								data-invalid={errors.email}
 								{...register("email")}
 							/>
 							<p
@@ -71,14 +92,30 @@ function Login() {
 								<Icon icon="ph:keyhole" width={20} height={20} />
 								Senha
 							</label>
-							<input
-								class="h-10 rounded p-1 drop-shadow-md focus:outline focus:outline-primary text-dark text-xs data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900"
-								id="password"
-								data-invalid={errors.password}
-								type="password"
-								placeholder="••••••••••••"
-								{...register("password")}
-							/>
+							<div class="relative">
+								<input
+									class="w-full h-10 rounded p-1 drop-shadow-md focus:outline focus:outline-primary text-input text-xs data-[visible=true]:text-base data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900 pr-8"
+									id="password"
+									type={passwordVisible.value ? "text" : "password"}
+									placeholder="••••••••••••"
+									data-invalid={errors.password}
+									data-visible={passwordVisible.value}
+									{...register("password")}
+								/>
+								<button
+									type="button"
+									class="absolute right-2 top-3 text-gray-500 cursor-pointer flex"
+									onClick={() =>
+										(passwordVisible.value = !passwordVisible.value)
+									}
+								>
+									{passwordVisible.value ? (
+										<Icon icon="ph:eye-slash" />
+									) : (
+										<Icon icon="ph:eye" />
+									)}
+								</button>
+							</div>
 							{errors.password && (
 								<p
 									data-invalid={errors.email}
@@ -110,9 +147,24 @@ function Login() {
 	);
 
 	async function handleLogin({ email, password }: LoginForm) {
-		await login({
-			email,
-			password,
-		});
+		try {
+			await login({
+				email,
+				password,
+			});
+
+			router.history.push(redirect || "/");
+		} catch (error) {
+			if (error instanceof AxiosError) {
+				const apiError = error.response?.data as APIError;
+
+				if (typeof apiError.error === "string") {
+					toast({
+						title: apiError.message,
+						variant: "destructive",
+					});
+				}
+			}
+		}
 	}
 }
