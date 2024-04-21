@@ -11,18 +11,25 @@
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
     "@preact/signals": "^1.2.3",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-toast": "^1.1.5",
+    "@tanstack/react-query": "^5.29.2",
     "@tanstack/react-router": "^1.26.7",
+    "@tanstack/react-table": "^8.16.0",
     "axios": "^1.6.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.365.0",
     "preact": "^10.19.6",
     "react-cookie": "^7.1.4",
-    "react-hook-form": "^7.51.2",
+    "react-hook-form": "^7.51.3",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "zod": "^3.22.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.6.4",

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { APIError } from "@/lib/api";
 import { isAuthenticated, login } from "@/signals/authentication";
@@ -133,12 +134,9 @@ function Login() {
                 </a>
               </p>
             </div>
-            <button
-              type="submit"
-              class="bg-primary rounded font-semibold h-10 my-10 drop-shadow-md focus:outline focus:outline-white hover:brightness-95"
-            >
+            <Button type="submit" className="my-10 drop-shadow-md">
               Acessar
-            </button>
+            </Button>
           </form>
         </div>
       </main>

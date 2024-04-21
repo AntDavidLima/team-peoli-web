@@ -27,10 +27,11 @@ effect(() => {
 
     if (authToken) {
       currentUser.value = { authToken };
-
-      api.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
     }
   }
+
+  api.defaults.headers.common["Authorization"] =
+    `Bearer ${currentUser.value?.authToken}`;
 });
 
 export async function login({ email, password }: LoginForm) {
