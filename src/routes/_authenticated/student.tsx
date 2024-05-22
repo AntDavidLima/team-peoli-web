@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { DataGrid } from "@/components/ui/data-grid";
 import {
 	Form,
 	FormControl,
@@ -9,6 +10,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Page } from "@/components/ui/page";
 import {
 	Select,
 	SelectContent,
@@ -24,26 +26,12 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import { api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-	ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	getPaginationRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 
@@ -80,10 +68,7 @@ const tableColumns: ColumnDef<Student>[] = [
 		accessorKey: "name",
 		header: "Nome",
 	},
-	{
-		accessorKey: "email",
-		header: "E-mail",
-	},
+	{ accessorKey: "email", header: "E-mail" },
 	{
 		accessorKey: "phone",
 		header: "Telefone",
@@ -106,13 +91,6 @@ function Student() {
 		},
 	});
 
-	const table = useReactTable({
-		data: students,
-		columns: tableColumns,
-		getCoreRowModel: getCoreRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
-	});
-
 	const navigate = useNavigate();
 
 	const { rows } = Route.useSearch();
@@ -122,9 +100,7 @@ function Student() {
 	});
 
 	return (
-		<div>
-			<h1 class="text-3xl font-bold">Alunos</h1>
-			<p class="text-muted text-lg">Gerenciamento de alunos</p>
+		<Page title="Alunos" description="Cadastre, edite e remova alunos">
 			<div class="bg-card rounded mt-8">
 				<div class="p-6 flex items-center justify-between">
 					<label class="sr-only" for="search">
@@ -137,11 +113,11 @@ function Student() {
 					/>
 					<Sheet>
 						<SheetTrigger>
-							<Button>Adicionar aluno</Button>
+							<Button>Cadastrar aluno</Button>
 						</SheetTrigger>
 						<SheetContent>
 							<SheetHeader>
-								<SheetTitle>Adicionar aluno</SheetTitle>
+								<SheetTitle>Cadastrar aluno</SheetTitle>
 								<SheetDescription>
 									Uma senha de acesso provisória será enviada ao e-mail
 									cadastrado.
@@ -194,64 +170,13 @@ function Student() {
 											</FormItem>
 										)}
 									/>
-									<Button>Adicionar</Button>
+									<Button>Cadastrar</Button>
 								</form>
 							</Form>
 						</SheetContent>
 					</Sheet>
 				</div>
-				<Table>
-					<TableHeader className="border-x-card border-x-4">
-						{table.getHeaderGroups().map((group) => (
-							<TableRow
-								key={group.id}
-								className="border-none hover:bg-background bg-background"
-							>
-								{group.headers.map((header) => (
-									<TableHead
-										key={header.id}
-										className="text-white font-bold uppercase"
-									>
-										{!header.isPlaceholder &&
-											flexRender(
-												header.column.columnDef.header,
-												header.getContext(),
-											)}
-									</TableHead>
-								))}
-							</TableRow>
-						))}
-					</TableHeader>
-					<TableBody>
-						{table.getRowModel().rows?.length ? (
-							table.getRowModel().rows.map((row) => (
-								<TableRow
-									key={row.id}
-									data-state={row.getIsSelected() && "selected"}
-									className="border-b-muted"
-								>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
-										</TableCell>
-									))}
-								</TableRow>
-							))
-						) : (
-							<TableRow>
-								<TableCell
-									colSpan={tableColumns.length}
-									className="h-24 text-center"
-								>
-									No results.
-								</TableCell>
-							</TableRow>
-						)}
-					</TableBody>
-				</Table>
+				<DataGrid<Student> rows={students} columns={tableColumns} />
 				<div class="flex items-center p-2 border-t-muted border-t gap-4 justify-end text-sm">
 					<div class="flex items-center gap-2">
 						<p>Linhas por página:</p>
@@ -280,7 +205,7 @@ function Student() {
 					</div>
 				</div>
 			</div>
-		</div>
+		</Page>
 	);
 
 	async function fetchStudents() {

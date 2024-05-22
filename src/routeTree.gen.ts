@@ -15,6 +15,7 @@ import { Route as LoginImport } from './routes/login'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthenticatedStudentImport } from './routes/_authenticated/student'
+import { Route as AuthenticatedExerciseImport } from './routes/_authenticated/exercise'
 
 // Create/Update Routes
 
@@ -38,6 +39,11 @@ const AuthenticatedStudentRoute = AuthenticatedStudentImport.update({
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
+const AuthenticatedExerciseRoute = AuthenticatedExerciseImport.update({
+  path: '/exercise',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -54,6 +60,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
+    '/_authenticated/exercise': {
+      preLoaderRoute: typeof AuthenticatedExerciseImport
+      parentRoute: typeof AuthenticatedImport
+    }
     '/_authenticated/student': {
       preLoaderRoute: typeof AuthenticatedStudentImport
       parentRoute: typeof AuthenticatedImport
@@ -65,7 +75,10 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren([
   IndexRoute,
-  AuthenticatedRoute.addChildren([AuthenticatedStudentRoute]),
+  AuthenticatedRoute.addChildren([
+    AuthenticatedExerciseRoute,
+    AuthenticatedStudentRoute,
+  ]),
   LoginRoute,
 ])
 
