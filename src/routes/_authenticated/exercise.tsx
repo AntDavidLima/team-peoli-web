@@ -33,7 +33,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import CreatableSelect from "react-select/creatable";
-import { OptionProps, components } from "react-select";
+import { MultiValueGenericProps, OptionProps, components } from "react-select";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import {
 	AlertDialogContent,
@@ -46,6 +46,7 @@ import {
 	AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { signal } from "@preact/signals";
+import { Badge } from "@/components/ui/badge";
 
 interface SelectOption {
 	label: string;
@@ -57,6 +58,7 @@ const focusedMuscleGroup = signal<null | SelectOption>(null);
 const isDeleteMuscleGroupDialogOpen = signal(false);
 const isRenameMuscleGroupDialogOpen = signal(false);
 const isAddMuscleGroupDialogOpen = signal(false);
+const isUpdateMuscleGroupWeightDialogOpen = signal(false);
 
 const exerciseSearchSchema = yup.object({
 	rows: yup.number().optional(),
@@ -269,6 +271,52 @@ function Exercise() {
 							</AlertDialogFooter>
 						</AlertDialogContent>
 					</AlertDialog>
+					<AlertDialog
+						open={isUpdateMuscleGroupWeightDialogOpen.value}
+						onOpenChange={() =>
+							(isUpdateMuscleGroupWeightDialogOpen.value = false)
+						}
+					>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Atualizar peso</AlertDialogTitle>
+							</AlertDialogHeader>
+							<Input
+								value={focusedMuscleGroup.value?.weight}
+								onChange={(e) =>
+								(focusedMuscleGroup.value!.weight = Number(
+									e.currentTarget.value,
+								))
+								}
+								type="number"
+								step={0.25}
+							/>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancelar</AlertDialogCancel>
+								<AlertDialogAction
+									onClick={() => {
+										form.setValue(
+											"muscleGroups",
+											[
+												...form.getValues("muscleGroups").map((muscleGroup) => {
+													if (
+														muscleGroup.value ===
+														focusedMuscleGroup.value?.value
+													) {
+														return focusedMuscleGroup.value!;
+													}
+													return muscleGroup;
+												}),
+											],
+											{ shouldTouch: true },
+										);
+									}}
+								>
+									Salvar
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
 					<Sheet>
 						<SheetTrigger>
 							<Button>Criar exercício</Button>
@@ -337,6 +385,7 @@ function Exercise() {
 														{...field}
 														components={{
 															Option: CustomOption,
+															MultiValueLabel: CustomMultiValueLabel,
 														}}
 														styles={{
 															input: (baseStyles) => ({
@@ -520,6 +569,31 @@ function Exercise() {
 		await api.put(`/muscle-group/${value}`, {
 			name: label,
 		});
+	}
+}
+
+function CustomMultiValueLabel(props: MultiValueGenericProps<SelectOption>) {
+	return (
+		<components.MultiValueLabel {...props}>
+			{props.data.label}{" "}
+			<Badge
+				variant="secondary"
+				className="cursor-pointer"
+				onClick={handleBadgeClick}
+			>
+				x {props.data.weight}
+			</Badge>
+		</components.MultiValueLabel>
+	);
+
+	function handleBadgeClick(event: MouseEvent) {
+		event.stopPropagation();
+		focusedMuscleGroup.value = {
+			label: props.data.label,
+			value: props.data.value,
+			weight: props.data.weight,
+		};
+		isUpdateMuscleGroupWeightDialogOpen.value = true;
 	}
 }
 
