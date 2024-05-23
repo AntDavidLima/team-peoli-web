@@ -74,6 +74,12 @@ interface Exercise {
 	name: string;
 	restTime: number;
 	instructions: string;
+	muscleGroups: ExercisedMuscleGroup[];
+}
+
+interface ExercisedMuscleGroup {
+	weight: number;
+	muscleGroup: MuscleGroup;
 }
 
 interface MuscleGroup {
@@ -88,6 +94,19 @@ const tableColumns: ColumnDef<Exercise>[] = [
 	},
 	{ accessorKey: "restTime", header: "Tempo de descanso" },
 	{ accessorKey: "instructions", header: "Instruções" },
+	{
+		accessorKey: "muscleGroups",
+		header: "Grupos musculares",
+		cell: ({ row }) => (
+			<div className="space-x-1">
+				{row.original.muscleGroups.map((muscleGroup) => (
+					<Badge key={muscleGroup.muscleGroup.id} variant="secondary">
+						{muscleGroup.muscleGroup.name} x {muscleGroup.weight}
+					</Badge>
+				))}
+			</div>
+		),
+	},
 ];
 
 const createExerciseFormSchema = yup.object({
@@ -350,7 +369,12 @@ function Exercise() {
 											<FormItem>
 												<FormLabel>Descanso</FormLabel>
 												<FormControl>
-													<Input placeholder="30s" {...field} />
+													<Input
+														placeholder="30s"
+														{...field}
+														type="number"
+														step={15}
+													/>
 												</FormControl>
 												<FormMessage />
 												<FormDescription>

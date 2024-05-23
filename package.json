@@ -25,6 +25,7 @@
     "axios": "^1.6.8",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "draft-js": "^0.11.7",
     "lucide-react": "^0.365.0",
     "preact": "^10.19.6",
     "react-cookie": "^7.1.4",
