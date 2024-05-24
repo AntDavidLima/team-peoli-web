@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { signal } from "@preact/signals";
 import { Badge } from "@/components/ui/badge";
-import { EditorState } from "draft-js";
+import { EditorState, convertToRaw } from "draft-js";
 import { Editor } from "react-draft-wysiwyg";
 import "@/../node_modules/react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 
@@ -76,7 +76,6 @@ interface Exercise {
 	id: number;
 	name: string;
 	restTime: number;
-	instructions: string;
 	muscleGroups: ExercisedMuscleGroup[];
 }
 
@@ -96,7 +95,6 @@ const tableColumns: ColumnDef<Exercise>[] = [
 		header: "Nome",
 	},
 	{ accessorKey: "restTime", header: "Tempo de descanso" },
-	{ accessorKey: "instructions", header: "Instruções" },
 	{
 		accessorKey: "muscleGroups",
 		header: "Grupos musculares",
@@ -630,10 +628,12 @@ function Exercise() {
 		instructions,
 		muscleGroups,
 	}: CreateExerciseForm) {
+		const instructionsRawDraft = convertToRaw(instructions.getCurrentContent());
+
 		await api.post("/exercise", {
 			name,
 			restTime,
-			instructions,
+			instructions: instructionsRawDraft,
 			muscleGroups: muscleGroups.map(
 				({ label, ...muscleGroup }) => muscleGroup,
 			),
