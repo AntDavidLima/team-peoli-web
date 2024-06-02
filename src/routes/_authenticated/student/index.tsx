@@ -29,15 +29,26 @@ import {
 import { api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
+import { TargetedEvent } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
+import _ from "lodash";
 
 const studentSearchSchema = yup.object({
-	rows: yup.number().optional(),
+	rows: yup.number().optional().default(10),
+	page: yup.number().optional().default(1),
+	query: yup.string().optional().default(""),
 });
+
+type StudentSearch = yup.InferType<typeof studentSearchSchema>;
 
 const createStudentFormSchema = yup.object({
 	name: yup.string().required("Campo obrigatório"),
@@ -51,12 +62,12 @@ const createStudentFormSchema = yup.object({
 
 type CreateStudentForm = yup.InferType<typeof createStudentFormSchema>;
 
-export const Route = createFileRoute("/_authenticated/student")({
+export const Route = createFileRoute("/_authenticated/student/")({
 	component: Student,
 	validateSearch: (search) => studentSearchSchema.validateSync(search),
 });
 
-interface Student {
+export interface Student {
 	id: number;
 	name: string;
 	email: string;
@@ -78,10 +89,16 @@ const tableColumns: ColumnDef<Student>[] = [
 function Student() {
 	const queryClient = useQueryClient();
 
-	const { data: students } = useQuery({
-		queryKey: ["students"],
-		queryFn: fetchStudents,
-		initialData: [],
+	const { rows, page, query } = Route.useSearch();
+
+	const {
+		data: [totalStudents, students],
+		isFetching: loadingStudents,
+	} = useQuery({
+		queryKey: ["students", page, rows, query],
+		queryFn: () => fetchStudents({ rows, page, query }),
+		initialData: [0, []],
+		placeholderData: keepPreviousData,
 	});
 
 	const { mutate: addStudent } = useMutation({
@@ -93,7 +110,14 @@ function Student() {
 
 	const navigate = useNavigate();
 
-	const { rows } = Route.useSearch();
+	const debouncedSearchStudent = _.debounce((query: string) => {
+		navigate({
+			search: (previousSearch) => ({
+				...previousSearch,
+				query,
+			}),
+		});
+	}, 300);
 
 	const form = useForm<CreateStudentForm>({
 		resolver: yupResolver(createStudentFormSchema),
@@ -110,9 +134,11 @@ function Student() {
 						id="search"
 						placeholder="Buscar aluno..."
 						class="bg-transparent border-muted border-2 rounded p-2 outline-none focus:border-primary"
+						onChange={handleQueryChange}
+						value={query}
 					/>
 					<Sheet>
-						<SheetTrigger>
+						<SheetTrigger asChild>
 							<Button>Cadastrar aluno</Button>
 						</SheetTrigger>
 						<SheetContent>
@@ -176,13 +202,18 @@ function Student() {
 						</SheetContent>
 					</Sheet>
 				</div>
-				<DataGrid<Student> rows={students} columns={tableColumns} />
+				<DataGrid<Student>
+					rows={students}
+					columns={tableColumns}
+					onRowClick={handleTableRowClick}
+					isLoading={loadingStudents}
+				/>
 				<div class="flex items-center p-2 border-t-muted border-t gap-4 justify-end text-sm">
 					<div class="flex items-center gap-2">
 						<p>Linhas por página:</p>
 						<Select
 							onValueChange={handleRowsPerPageChange}
-							value={rows?.toString() || "10"}
+							value={rows.toString()}
 						>
 							<SelectTrigger>
 								<SelectValue />
@@ -196,10 +227,20 @@ function Student() {
 					</div>
 					<p>1-10 de 10</p>
 					<div class="flex items-center">
-						<Button variant="ghost" size="icon">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handlePreviousPageClick}
+							disabled={page === 1}
+						>
 							<Icon icon="mingcute:left-line" height={20} width={20} />
 						</Button>
-						<Button variant="ghost" size="icon">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handleNextPageClick}
+							disabled={page * rows >= totalStudents}
+						>
 							<Icon icon="mingcute:right-line" height={20} width={20} />
 						</Button>
 					</div>
@@ -208,17 +249,55 @@ function Student() {
 		</Page>
 	);
 
-	async function fetchStudents() {
-		const { data: students } = await api.get("/user");
+	async function handleTableRowClick(student: Student) {
+		navigate({
+			to: "/student/$id",
+			params: {
+				id: student.id.toString(),
+			},
+		});
+	}
+
+	async function fetchStudents({ query, rows, page }: StudentSearch) {
+		const { data: students } = await api.get("/user", {
+			params: {
+				query,
+				rows,
+				page,
+			},
+		});
 
 		return students;
 	}
 
 	function handleRowsPerPageChange(rows: string) {
 		navigate({
-			search: {
+			search: (previousSearch) => ({
+				...previousSearch,
 				rows: Number(rows),
-			},
+			}),
+		});
+	}
+
+	function handleQueryChange(event: TargetedEvent<HTMLInputElement>) {
+		debouncedSearchStudent(event.currentTarget.value);
+	}
+
+	function handleNextPageClick() {
+		navigate({
+			search: (previousSearch) => ({
+				...previousSearch,
+				page: page + 1,
+			}),
+		});
+	}
+
+	function handlePreviousPageClick() {
+		navigate({
+			search: (previousSearch) => ({
+				...previousSearch,
+				page: page - 1,
+			}),
 		});
 	}
 

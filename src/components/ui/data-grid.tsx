@@ -17,9 +17,16 @@ import {
 interface DataGrid<T> {
 	rows: T[];
 	columns: ColumnDef<T>[];
+	onRowClick?: (row: T) => void;
+	isLoading?: boolean;
 }
 
-export function DataGrid<T>({ rows, columns }: DataGrid<T>) {
+export function DataGrid<T>({
+	rows,
+	columns,
+	onRowClick,
+	isLoading,
+}: DataGrid<T>) {
 	const table = useReactTable({
 		data: rows,
 		columns,
@@ -51,12 +58,27 @@ export function DataGrid<T>({ rows, columns }: DataGrid<T>) {
 				))}
 			</TableHeader>
 			<TableBody>
-				{table.getRowModel().rows?.length ? (
+				{isLoading ? (
+					<TableRow className="border-none">
+						<TableCell colSpan={columns.length} className="py-0 px-0.5">
+							<div class="h-1 bg-secondary relative overflow-hidden brefore:block before:content-[''] before:absolute before:h-1 before:bg-primary before:w-6/12 before:top-0 before:left-0 before:animate-slide-away" />
+						</TableCell>
+					</TableRow>
+				) : (
+					<TableRow className="border-none">
+						<TableCell colSpan={columns.length} className="py-0 px-0.5">
+							<div class="h-1 bg-background" />
+						</TableCell>
+					</TableRow>
+				)}
+				{table.getRowModel().rows?.length || isLoading ? (
 					table.getRowModel().rows.map((row) => (
 						<TableRow
 							key={row.id}
 							data-state={row.getIsSelected() && "selected"}
-							className="border-b-muted"
+							className="border-b-muted data-[isLink=true]:cursor-pointer"
+							onClick={() => onRowClick?.(row.original)}
+							data-isLink={!!onRowClick}
 						>
 							{row.getVisibleCells().map((cell) => (
 								<TableCell key={cell.id}>
