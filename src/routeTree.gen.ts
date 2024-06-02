@@ -14,8 +14,9 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as IndexImport } from './routes/index'
-import { Route as AuthenticatedStudentImport } from './routes/_authenticated/student'
 import { Route as AuthenticatedExerciseImport } from './routes/_authenticated/exercise'
+import { Route as AuthenticatedStudentIndexImport } from './routes/_authenticated/student/index'
+import { Route as AuthenticatedStudentIdImport } from './routes/_authenticated/student/$id'
 
 // Create/Update Routes
 
@@ -34,13 +35,18 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthenticatedStudentRoute = AuthenticatedStudentImport.update({
-  path: '/student',
+const AuthenticatedExerciseRoute = AuthenticatedExerciseImport.update({
+  path: '/exercise',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
-const AuthenticatedExerciseRoute = AuthenticatedExerciseImport.update({
-  path: '/exercise',
+const AuthenticatedStudentIndexRoute = AuthenticatedStudentIndexImport.update({
+  path: '/student/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+
+const AuthenticatedStudentIdRoute = AuthenticatedStudentIdImport.update({
+  path: '/student/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
@@ -64,8 +70,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExerciseImport
       parentRoute: typeof AuthenticatedImport
     }
-    '/_authenticated/student': {
-      preLoaderRoute: typeof AuthenticatedStudentImport
+    '/_authenticated/student/$id': {
+      preLoaderRoute: typeof AuthenticatedStudentIdImport
+      parentRoute: typeof AuthenticatedImport
+    }
+    '/_authenticated/student/': {
+      preLoaderRoute: typeof AuthenticatedStudentIndexImport
       parentRoute: typeof AuthenticatedImport
     }
   }
@@ -77,7 +87,8 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute,
   AuthenticatedRoute.addChildren([
     AuthenticatedExerciseRoute,
-    AuthenticatedStudentRoute,
+    AuthenticatedStudentIdRoute,
+    AuthenticatedStudentIndexRoute,
   ]),
   LoginRoute,
 ])
