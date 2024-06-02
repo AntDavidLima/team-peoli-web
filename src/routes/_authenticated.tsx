@@ -27,9 +27,9 @@ const expanded = signal(true);
 
 function AuthenticatedLayout() {
 	return (
-		<div class="flex">
+		<div class="flex h-screen">
 			<aside
-				class="relative h-screen bg-card pt-6 px-4 data-[expanded=false]:px-1.5 data-[expanded=false]:hover:w-36 data-[expanded=false]:w-16 transition-all group w-72"
+				class="relative h-full bg-card pt-6 px-4 data-[expanded=false]:px-1.5 data-[expanded=false]:hover:w-36 data-[expanded=false]:w-16 transition-all group w-72"
 				data-expanded={expanded.value}
 			>
 				<div class="flex items-center justify-center w-full">
@@ -58,7 +58,7 @@ function AuthenticatedLayout() {
 					/>
 				</ul>
 			</aside>
-			<main class="container mx-auto py-12">
+			<main class="container mx-auto py-12 overflow-y-scroll">
 				<Outlet />
 			</main>
 		</div>
