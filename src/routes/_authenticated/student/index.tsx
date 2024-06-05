@@ -26,7 +26,7 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { api } from "@/lib/api";
+import { APIError, api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import {
@@ -41,6 +41,22 @@ import { TargetedEvent } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import _ from "lodash";
+import { signal } from "@preact/signals";
+import { AxiosError } from "axios";
+import { toast } from "@/components/ui/use-toast";
+import { phone } from "@/lib/masks";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Pencil, Trash2 } from "lucide-react";
 
 const studentSearchSchema = yup.object({
 	rows: yup.number().optional().default(10),
@@ -62,6 +78,8 @@ const createStudentFormSchema = yup.object({
 
 type CreateStudentForm = yup.InferType<typeof createStudentFormSchema>;
 
+type UpdateStudentForm = CreateStudentForm;
+
 export const Route = createFileRoute("/_authenticated/student/")({
 	component: Student,
 	validateSearch: (search) => studentSearchSchema.validateSync(search),
@@ -74,17 +92,8 @@ export interface Student {
 	phone: string;
 }
 
-const tableColumns: ColumnDef<Student>[] = [
-	{
-		accessorKey: "name",
-		header: "Nome",
-	},
-	{ accessorKey: "email", header: "E-mail" },
-	{
-		accessorKey: "phone",
-		header: "Telefone",
-	},
-];
+const isCreationFormOpen = signal(false);
+const edittingStudentId = signal<number | null>(null);
 
 function Student() {
 	const queryClient = useQueryClient();
@@ -99,13 +108,6 @@ function Student() {
 		queryFn: () => fetchStudents({ rows, page, query }),
 		initialData: [0, []],
 		placeholderData: keepPreviousData,
-	});
-
-	const { mutate: addStudent } = useMutation({
-		mutationFn: createStudent,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["students"] });
-		},
 	});
 
 	const navigate = useNavigate();
@@ -123,6 +125,125 @@ function Student() {
 		resolver: yupResolver(createStudentFormSchema),
 	});
 
+	const { mutate: addStudent } = useMutation({
+		mutationFn: createStudent,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["students"] });
+			isCreationFormOpen.value = false;
+			form.reset();
+		},
+		onError: (error) => {
+			if (error instanceof AxiosError) {
+				const apiError = error.response?.data as APIError;
+
+				if (typeof apiError.error === "string") {
+					toast({
+						title: apiError.message,
+						variant: "destructive",
+					});
+				}
+			}
+		},
+	});
+
+	const { mutate: removeStudent } = useMutation({
+		mutationFn: deleteStudent,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["students"] });
+		},
+		onError: (error) => {
+			if (error instanceof AxiosError) {
+				const apiError = error.response?.data as APIError;
+
+				if (typeof apiError.error === "string") {
+					toast({
+						title: apiError.message,
+						variant: "destructive",
+					});
+				}
+			}
+		},
+	});
+
+	const { mutate: patchStudent } = useMutation({
+		mutationFn: updateStudent,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["students"] });
+			isCreationFormOpen.value = false;
+			form.reset();
+		},
+		onError: (error) => {
+			if (error instanceof AxiosError) {
+				const apiError = error.response?.data as APIError;
+
+				if (typeof apiError.error === "string") {
+					toast({
+						title: apiError.message,
+						variant: "destructive",
+					});
+				}
+			}
+		},
+	});
+
+	const tableColumns: ColumnDef<Student>[] = [
+		{
+			accessorKey: "name",
+			header: "Nome",
+		},
+		{ accessorKey: "email", header: "E-mail" },
+		{
+			accessorKey: "phone",
+			header: "Telefone",
+			cell: ({ row }) => phone.mask(row.original.phone),
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => (
+				<div class="invisible group-hover:visible text-right space-x-1">
+					<Button
+						size="icon"
+						variant="ghost"
+						onClick={(e) => {
+							e.stopPropagation();
+							edittingStudentId.value = row.original.id;
+							Object.entries(row.original).forEach(([key, value]) => {
+								form.setValue(key as keyof CreateStudentForm, value);
+							});
+							isCreationFormOpen.value = true;
+						}}
+					>
+						<Pencil size={14} />
+					</Button>
+					<AlertDialog>
+						<AlertDialogTrigger onClick={(e) => e.stopPropagation()}>
+							<Button size="icon" variant="ghost">
+								<Trash2 size={14} />
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Remover aluno</AlertDialogTitle>
+								<AlertDialogDescription>
+									Tem certeza que deseja remover este aluno?
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancelar</AlertDialogCancel>
+								<AlertDialogAction
+									className="bg-destructive hover:bg-destructive/80"
+									onClick={() => removeStudent(row.original.id)}
+								>
+									Deletar
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				</div>
+			),
+		},
+	];
+
 	return (
 		<Page title="Alunos" description="Cadastre, edite e remova alunos">
 			<div class="bg-card rounded mt-8">
@@ -137,21 +258,34 @@ function Student() {
 						onChange={handleQueryChange}
 						value={query}
 					/>
-					<Sheet>
+					<Sheet
+						open={isCreationFormOpen.value}
+						onOpenChange={(open) => {
+							isCreationFormOpen.value = open;
+							edittingStudentId.value && setTimeout(() => form.reset(), 500);
+							edittingStudentId.value = null;
+						}}
+					>
 						<SheetTrigger asChild>
 							<Button>Cadastrar aluno</Button>
 						</SheetTrigger>
 						<SheetContent>
-							<SheetHeader>
-								<SheetTitle>Cadastrar aluno</SheetTitle>
-								<SheetDescription>
-									Uma senha de acesso provisória será enviada ao e-mail
-									cadastrado.
-								</SheetDescription>
+							<SheetHeader className="mb-4">
+								<SheetTitle>
+									{edittingStudentId.value ? "Editar aluno" : "Cadastrar aluno"}
+								</SheetTitle>
+								{!edittingStudentId.value && (
+									<SheetDescription>
+										Uma senha de acesso provisória será enviada ao e-mail
+										cadastrado.
+									</SheetDescription>
+								)}
 							</SheetHeader>
 							<Form {...form}>
 								<form
-									onSubmit={form.handleSubmit(addStudent)}
+									onSubmit={form.handleSubmit(
+										edittingStudentId.value ? patchStudent : addStudent,
+									)}
 									class="space-y-6"
 								>
 									<FormField
@@ -176,9 +310,11 @@ function Student() {
 												<FormControl>
 													<Input placeholder="email@exemplo.com" {...field} />
 												</FormControl>
-												<FormDescription>
-													E-mail que receberá a senha provisória
-												</FormDescription>
+												{!edittingStudentId.value && (
+													<FormDescription>
+														E-mail que receberá a senha provisória
+													</FormDescription>
+												)}
 												<FormMessage />
 											</FormItem>
 										)}
@@ -186,17 +322,30 @@ function Student() {
 									<FormField
 										control={form.control}
 										name="phone"
-										render={({ field }) => (
+										render={({ field: { value, onChange, ...field } }) => (
 											<FormItem>
 												<FormLabel>Telefone</FormLabel>
 												<FormControl>
-													<Input placeholder="(88) 8 8888-8888" {...field} />
+													<Input
+														placeholder="(99) 99999-9999"
+														{...field}
+														value={phone.mask(value)}
+														onChange={(event) => {
+															event.currentTarget.value = phone.unmask(
+																event.currentTarget.value,
+															);
+															onChange(event);
+														}}
+														type="tel"
+													/>
 												</FormControl>
 												<FormMessage />
 											</FormItem>
 										)}
 									/>
-									<Button>Cadastrar</Button>
+									<Button>
+										{edittingStudentId.value ? "Salvar" : "Cadastrar"}
+									</Button>
 								</form>
 							</Form>
 						</SheetContent>
@@ -303,6 +452,18 @@ function Student() {
 
 	async function createStudent({ phone, email, name }: CreateStudentForm) {
 		await api.post("/user", {
+			phone,
+			email,
+			name,
+		});
+	}
+
+	async function deleteStudent(id: number) {
+		await api.delete(`/user/${id}`);
+	}
+
+	async function updateStudent({ phone, email, name }: UpdateStudentForm) {
+		await api.patch(`/user/${edittingStudentId.value}`, {
 			phone,
 			email,
 			name,

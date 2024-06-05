@@ -57,31 +57,25 @@ export function DataGrid<T>({
 					</TableRow>
 				))}
 			</TableHeader>
-			<TableBody>
-				{isLoading ? (
-					<TableRow className="border-none">
-						<TableCell colSpan={columns.length} className="py-0 px-0.5">
-							<div class="h-1 bg-secondary relative overflow-hidden brefore:block before:content-[''] before:absolute before:h-1 before:bg-primary before:w-6/12 before:top-0 before:left-0 before:animate-slide-away" />
-						</TableCell>
-					</TableRow>
-				) : (
-					<TableRow className="border-none">
-						<TableCell colSpan={columns.length} className="py-0 px-0.5">
-							<div class="h-1 bg-background" />
+			<TableBody className="relative">
+				{isLoading && (
+					<TableRow className="border-none -top-1 absolute w-full overflow-x-clip">
+						<TableCell colSpan={columns.length} className="py-0">
+							<div class="h-1 bg-background before:h-1 before:absolute before:bg-primary before:w-6/12 before:animate-slide-away" />
 						</TableCell>
 					</TableRow>
 				)}
-				{table.getRowModel().rows?.length || isLoading ? (
+				{table.getRowModel().rows?.length ? (
 					table.getRowModel().rows.map((row) => (
 						<TableRow
 							key={row.id}
 							data-state={row.getIsSelected() && "selected"}
-							className="border-b-muted data-[isLink=true]:cursor-pointer"
+							className="border-b-muted data-[isLink=true]:cursor-pointer group"
 							onClick={() => onRowClick?.(row.original)}
 							data-isLink={!!onRowClick}
 						>
 							{row.getVisibleCells().map((cell) => (
-								<TableCell key={cell.id}>
+								<TableCell key={cell.id} className="h-14 py-0">
 									{flexRender(cell.column.columnDef.cell, cell.getContext())}
 								</TableCell>
 							))}
@@ -90,7 +84,7 @@ export function DataGrid<T>({
 				) : (
 					<TableRow>
 						<TableCell colSpan={columns.length} className="h-24 text-center">
-							Sem resultados.
+							{isLoading ? "Carregando..." : "Sem resultados."}
 						</TableCell>
 					</TableRow>
 				)}
