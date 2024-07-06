@@ -3,10 +3,10 @@ import { toast } from "@/components/ui/use-toast";
 import { APIError } from "@/lib/api";
 import { isAuthenticated, login } from "@/signals/authentication";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import { signal } from "@preact/signals";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { AxiosError } from "axios";
+import { Eye, EyeOff, Mail, RectangleEllipsis } from "lucide-react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 
@@ -72,7 +72,7 @@ function Login() {
 								for="email"
 								class="font-medium drop-shadow-md flex items-center gap-1"
 							>
-								<Icon icon="ph:envelope" width={20} height={20} />
+								<Mail size={16} />
 								E-mail
 							</label>
 							<input
@@ -94,7 +94,7 @@ function Login() {
 								for="password"
 								class="font-medium drop-shadow-md flex items-center gap-1"
 							>
-								<Icon icon="ph:keyhole" width={20} height={20} />
+								<RectangleEllipsis size={16} />
 								Senha
 							</label>
 							<div class="relative">
@@ -115,9 +115,9 @@ function Login() {
 									}
 								>
 									{passwordVisible.value ? (
-										<Icon icon="ph:eye-slash" />
+										<EyeOff size={16} />
 									) : (
-										<Icon icon="ph:eye" />
+										<Eye size={16} />
 									)}
 								</button>
 							</div>

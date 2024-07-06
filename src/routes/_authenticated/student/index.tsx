@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/sheet";
 import { APIError, api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import {
 	keepPreviousData,
 	useMutation,
@@ -56,7 +55,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 
 const studentSearchSchema = yup.object({
 	rows: yup.number().optional().default(10),
@@ -382,7 +381,7 @@ function Student() {
 							onClick={handlePreviousPageClick}
 							disabled={page === 1}
 						>
-							<Icon icon="mingcute:left-line" height={20} width={20} />
+							<ChevronLeft size={20} />
 						</Button>
 						<Button
 							variant="ghost"
@@ -390,7 +389,7 @@ function Student() {
 							onClick={handleNextPageClick}
 							disabled={page * rows >= totalStudents}
 						>
-							<Icon icon="mingcute:right-line" height={20} width={20} />
+							<ChevronRight size={20} />
 						</Button>
 					</div>
 				</div>

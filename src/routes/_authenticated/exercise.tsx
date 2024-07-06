@@ -34,7 +34,6 @@ import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import CreatableSelect from "react-select/creatable";
 import { MultiValueGenericProps, OptionProps, components } from "react-select";
-import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import {
 	AlertDialogContent,
 	AlertDialog,
@@ -50,6 +49,7 @@ import { Badge } from "@/components/ui/badge";
 import { EditorState, convertToRaw } from "draft-js";
 import "@/../node_modules/react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 
 interface SelectOption {
 	label: string;
@@ -522,10 +522,10 @@ function Exercise() {
 					<p>1-10 de 10</p>
 					<div class="flex items-center">
 						<Button variant="ghost" size="icon">
-							<Icon icon="mingcute:left-line" height={20} width={20} />
+							<ChevronLeft size={20} />
 						</Button>
 						<Button variant="ghost" size="icon">
-							<Icon icon="mingcute:right-line" height={20} width={20} />
+							<ChevronRight size={20} />
 						</Button>
 					</div>
 				</div>
@@ -649,7 +649,7 @@ function CustomOption({
 							onClick={handleEditButtonClick}
 							type="button"
 						>
-							<Icon icon="material-symbols:edit-outline" width={16} />
+							<Pencil size={16} />
 						</Button>
 						<Button
 							size="icon"
@@ -658,7 +658,7 @@ function CustomOption({
 							onClick={handleDeleteButtonClick}
 							type="button"
 						>
-							<Icon icon="material-symbols:delete-outline" width={16} />
+							<Trash2 size={16} />
 						</Button>
 					</div>
 				)}

@@ -1,12 +1,12 @@
-import { Page } from "@/components/ui/page";
-import { api } from "@/lib/api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Student } from ".";
-import { Tabs, TabsTrigger, TabsList, TabsContent } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
+import { Calendar } from "@/components/ui/calendar";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+} from "@/components/ui/command";
 import {
 	Form,
 	FormControl,
@@ -15,30 +15,41 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { EditorState, convertToRaw } from "draft-js";
+import { Input } from "@/components/ui/input";
+import { Page } from "@/components/ui/page";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { ptBR } from "date-fns/locale/pt-BR";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { Exercise, MuscleGroup } from "../exercise";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-} from "@/components/ui/command";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api } from "@/lib/api";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { signal } from "@preact/signals";
-import { useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { format, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale/pt-BR";
+import { EditorState, convertToRaw } from "draft-js";
+import { CalendarIcon, Plus, Save, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import * as yup from "yup";
+import { Student } from ".";
+import { Exercise, MuscleGroup } from "../exercise";
+import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
+import {
+	VictoryAxis,
+	VictoryBar,
+	VictoryChart,
+	VictoryGroup,
+	VictoryLabel,
+	VictoryLine,
+	VictoryScatter,
+	VictoryStack,
+} from "victory";
 
 enum Day {
 	SUNDAY = "D",
@@ -94,6 +105,11 @@ function Component() {
 	const { id } = Route.useParams();
 
 	const queryClient = useQueryClient();
+
+	const [date, setDate] = useState<DateRange | undefined>({
+		to: new Date(),
+		from: subMonths(new Date(), 1),
+	});
 
 	const { data: muscleGroups } = useQuery({
 		queryKey: [`muscleGroups`],
@@ -168,13 +184,13 @@ function Component() {
 											render={({ field }) => (
 												<FormItem className="flex-1">
 													<FormControl>
-														<div class="flex items-end gap-1">
+														<div class="flex items-center gap-2">
 															<Input
 																placeholder="Nome da rotina de treinos"
 																{...field}
 															/>
 															<Button size="icon" variant="ghost" type="submit">
-																<Icon icon="material-symbols:add" />
+																<Plus size={22} className="text-muted" />
 															</Button>
 														</div>
 													</FormControl>
@@ -184,6 +200,366 @@ function Component() {
 										/>
 									</form>
 								</Form>
+							</div>
+						</div>
+					</div>
+				</TabsContent>
+				<TabsContent value="statistics">
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button
+								className={cn(
+									"w-[300px] justify-start text-left font-normal normal-case",
+									!date && "text-muted-foreground",
+								)}
+								variant="outline"
+							>
+								<CalendarIcon className="mr-2 h-4 w-4" />
+								{date?.from ? (
+									date.to ? (
+										<>
+											{format(date.from, "dd MMM, y")} -{" "}
+											{format(date.to, "dd MMM, y")}
+										</>
+									) : (
+										format(date.from, "dd MMM, y")
+									)
+								) : (
+									<span>Selecione uma data</span>
+								)}
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-auto p-2" align="start">
+							<Calendar
+								initialFocus
+								mode="range"
+								defaultMonth={date?.from}
+								selected={date}
+								onSelect={setDate}
+								numberOfMonths={2}
+							/>
+						</PopoverContent>
+					</Popover>
+					<svg style={{ height: 0 }}>
+						<defs>
+							<linearGradient
+								id="blue-to-red"
+								x1="0%"
+								x2="100%"
+								gradientUnits="userSpaceOnUse"
+							>
+								<stop offset="0%" stopColor="#0B69D4" />
+								<stop offset="100%" stopColor="#C43343" />
+							</linearGradient>
+						</defs>
+					</svg>
+					<div class="grid-cols-2 grid mt-4 gap-4">
+						<div class="bg-card items-center flex flex-col rounded py-4">
+							<h2 class="text-lg font-semibold">Supino reto</h2>
+							<VictoryChart domain={{ y: [0, 4] }} height={300}>
+								<VictoryAxis
+									dependentAxis
+									tickFormat={(tick) => Math.floor((tick * 40) / 3)}
+									style={{
+										tickLabels: { fill: "white" },
+										axis: { stroke: "#0B69D4", strokeWidth: 4 },
+									}}
+								/>
+								<VictoryAxis
+									dependentAxis
+									tickFormat={(tick) => Math.floor((tick * 12) / 3)}
+									offsetX={400}
+									style={{
+										tickLabels: { textAnchor: "start", fill: "white" },
+										ticks: {
+											padding: -20,
+										},
+										axis: { stroke: "#C43343", strokeWidth: 4 },
+									}}
+								/>
+								<VictoryStack>
+									<VictoryChart>
+										<VictoryAxis
+											tickValues={["3", "4", "5"]}
+											style={{
+												tickLabels: { fill: "white" },
+												axis: {
+													strokeWidth: 4,
+													stroke: "url(#blue-to-red)",
+												},
+											}}
+										/>
+										<VictoryGroup
+											data={[
+												{ day: "3", load: 100 },
+												{ day: "4", load: 110 },
+												{ day: "5", load: 120 },
+											]}
+											color="#0B69D4"
+											y={(segment) => segment.load / 120 + 2.5}
+											x="day"
+										>
+											<VictoryScatter />
+											<VictoryLine />
+										</VictoryGroup>
+										<VictoryGroup
+											data={[
+												{ day: "3", reps: 30 },
+												{ day: "4", reps: 28 },
+												{ day: "5", reps: 32 },
+											]}
+											color="#C43343"
+											x="day"
+											y={(segment) => segment.reps / 32 + 2.5}
+										>
+											<VictoryScatter />
+											<VictoryLine
+												style={{
+													data: { strokeDasharray: "15, 5" },
+												}}
+											/>
+										</VictoryGroup>
+									</VictoryChart>
+									<VictoryGroup
+										offset={32}
+										style={{ labels: { fill: "white" } }}
+									>
+										<VictoryStack colorScale="cool">
+											<VictoryBar
+												data={[
+													{ day: "3", load: 30 },
+													{ day: "4", load: 40 },
+													{ day: "5", load: 40 },
+												]}
+												x="day"
+												y={(segment) => segment.load / 40}
+												labels={({ datum }) => datum.load}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", load: 35 },
+													{ day: "4", load: 35 },
+													{ day: "5", load: 40 },
+												]}
+												x="day"
+												y={(segment) => segment.load / 40}
+												labels={({ datum }) => datum.load}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", load: 35 },
+													{ day: "4", load: 35 },
+													{ day: "5", load: 40 },
+												]}
+												x="day"
+												y={(segment) => segment.load / 40}
+												labels={({ datum }) => datum.load}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+										</VictoryStack>
+										<VictoryStack colorScale="warm">
+											<VictoryBar
+												data={[
+													{ day: "3", reps: 10 },
+													{ day: "4", reps: 8 },
+													{ day: "5", reps: 8 },
+												]}
+												x="day"
+												y={(segment) => segment.reps / 12}
+												labels={({ datum }) => datum.reps}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", reps: 10 },
+													{ day: "4", reps: 10 },
+													{ day: "5", reps: 12 },
+												]}
+												x="day"
+												y={(segment) => segment.reps / 12}
+												labels={({ datum }) => datum.reps}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", reps: 10 },
+													{ day: "4", reps: 10 },
+													{ day: "5", reps: 12 },
+												]}
+												x="day"
+												y={(segment) => segment.reps / 12}
+												labels={({ datum }) => datum.reps}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+										</VictoryStack>
+									</VictoryGroup>
+								</VictoryStack>
+							</VictoryChart>
+							<div class="flex justify-evenly w-full">
+								<div class="flex items-center gap-1">
+									<div class="rounded-full w-4 aspect-square bg-[#0B69D4]" />
+									<p>Carga</p>
+								</div>
+								<div class="flex items-center gap-1">
+									<div class="rounded-full w-4 aspect-square bg-[#C43343]" />
+									<p>Repetições</p>
+								</div>
+							</div>
+						</div>
+						<div class="bg-card items-center flex flex-col rounded py-4">
+							<h2 class="text-lg font-semibold">Supino torto</h2>
+							<VictoryChart domain={{ y: [0, 4] }} height={300}>
+								<VictoryAxis
+									dependentAxis
+									tickFormat={(tick) => Math.floor((tick * 40) / 3)}
+									style={{
+										tickLabels: { fill: "white" },
+										axis: { stroke: "#0B69D4", strokeWidth: 4 },
+									}}
+								/>
+								<VictoryAxis
+									dependentAxis
+									tickFormat={(tick) => Math.floor((tick * 12) / 3)}
+									offsetX={400}
+									style={{
+										tickLabels: { textAnchor: "start", fill: "white" },
+										ticks: {
+											padding: -20,
+										},
+										axis: { stroke: "#C43343", strokeWidth: 4 },
+									}}
+								/>
+								<VictoryStack>
+									<VictoryChart>
+										<VictoryAxis
+											tickValues={["3", "4", "5"]}
+											style={{
+												tickLabels: { fill: "white" },
+												axis: {
+													strokeWidth: 4,
+													stroke: "url(#blue-to-red)",
+												},
+											}}
+										/>
+										<VictoryGroup
+											data={[
+												{ day: "3", load: 100 },
+												{ day: "4", load: 110 },
+												{ day: "5", load: 120 },
+											]}
+											color="#0B69D4"
+											y={(segment) => segment.load / 120 + 2.5}
+											x="day"
+										>
+											<VictoryScatter />
+											<VictoryLine />
+										</VictoryGroup>
+										<VictoryGroup
+											data={[
+												{ day: "3", reps: 30 },
+												{ day: "4", reps: 28 },
+												{ day: "5", reps: 32 },
+											]}
+											color="#C43343"
+											x="day"
+											y={(segment) => segment.reps / 32 + 2.5}
+										>
+											<VictoryScatter />
+											<VictoryLine
+												style={{
+													data: { strokeDasharray: "15, 5" },
+												}}
+											/>
+										</VictoryGroup>
+									</VictoryChart>
+									<VictoryGroup
+										offset={32}
+										style={{ labels: { fill: "white" } }}
+									>
+										<VictoryStack colorScale="cool">
+											<VictoryBar
+												data={[
+													{ day: "3", load: 30 },
+													{ day: "4", load: 40 },
+													{ day: "5", load: 40 },
+												]}
+												x="day"
+												y={(segment) => segment.load / 40}
+												labels={({ datum }) => datum.load}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", load: 35 },
+													{ day: "4", load: 35 },
+													{ day: "5", load: 40 },
+												]}
+												x="day"
+												y={(segment) => segment.load / 40}
+												labels={({ datum }) => datum.load}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", load: 35 },
+													{ day: "4", load: 35 },
+													{ day: "5", load: 40 },
+												]}
+												x="day"
+												y={(segment) => segment.load / 40}
+												labels={({ datum }) => datum.load}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+										</VictoryStack>
+										<VictoryStack colorScale="warm">
+											<VictoryBar
+												data={[
+													{ day: "3", reps: 10 },
+													{ day: "4", reps: 8 },
+													{ day: "5", reps: 8 },
+												]}
+												x="day"
+												y={(segment) => segment.reps / 12}
+												labels={({ datum }) => datum.reps}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", reps: 10 },
+													{ day: "4", reps: 10 },
+													{ day: "5", reps: 12 },
+												]}
+												x="day"
+												y={(segment) => segment.reps / 12}
+												labels={({ datum }) => datum.reps}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+											<VictoryBar
+												data={[
+													{ day: "3", reps: 10 },
+													{ day: "4", reps: 10 },
+													{ day: "5", reps: 12 },
+												]}
+												x="day"
+												y={(segment) => segment.reps / 12}
+												labels={({ datum }) => datum.reps}
+												labelComponent={<VictoryLabel dy={20} />}
+											/>
+										</VictoryStack>
+									</VictoryGroup>
+								</VictoryStack>
+							</VictoryChart>
+							<div class="flex justify-evenly w-full">
+								<div class="flex items-center gap-1">
+									<div class="rounded-full w-4 aspect-square bg-[#0B69D4]" />
+									<p>Carga</p>
+								</div>
+								<div class="flex items-center gap-1">
+									<div class="rounded-full w-4 aspect-square bg-[#C43343]" />
+									<p>Repetições</p>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -305,13 +681,13 @@ function Routine({ name }: RoutineProps) {
 						render={({ field }) => (
 							<FormItem className="flex-1">
 								<FormControl>
-									<div class="flex items-end gap-1">
+									<div class="flex items-center gap-2">
 										<Input placeholder="Nome da rotina de treinos" {...field} />
 										<Button size="icon" variant="ghost" type="button">
-											<Icon icon="material-symbols:delete" />
+											<Trash2 size={16} />
 										</Button>
 										<Button size="icon" variant="ghost" type="submit">
-											<Icon icon="material-symbols:save" />
+											<Save size={16} />
 										</Button>
 									</div>
 								</FormControl>

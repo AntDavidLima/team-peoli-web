@@ -40,14 +40,14 @@
     "react-select": "^5.8.0",
     "tailwind-merge": "^2.2.2",
     "tailwindcss-animate": "^1.0.7",
+    "victory": "^37.0.2",
     "yup": "^1.4.0",
     "zod": "^3.22.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.6.4",
-    "@iconify-icon/react": "^2.0.1",
-    "@tanstack/react-query-devtools": "^5.37.1",
     "@preact/preset-vite": "^2.8.2",
+    "@tanstack/react-query-devtools": "^5.37.1",
     "@tanstack/router-devtools": "^1.26.7",
     "@tanstack/router-vite-plugin": "^1.26.6",
     "@types/draft-js": "^0.11.18",

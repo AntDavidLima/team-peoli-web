@@ -6,8 +6,8 @@ import {
 	LinkProps,
 } from "@tanstack/react-router";
 import { isAuthenticated } from "../signals/authentication";
-import { Icon } from "@iconify-icon/react/dist/iconify.mjs";
 import { signal } from "@preact/signals";
+import { ChevronsLeft, Dumbbell, GraduationCap } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
 	beforeLoad: ({ location }) => {
@@ -46,15 +46,19 @@ function AuthenticatedLayout() {
 						onClick={() => (expanded.value = !expanded.value)}
 						data-expanded={expanded.value}
 					>
-						<Icon icon="uiw:d-arrow-left" width={20} height={20} />
+						<ChevronsLeft />
 					</button>
 				</div>
 				<ul class="mt-12">
-					<MenuItem to="/student" title="Alunos" icon="ph:student-bold" />
+					<MenuItem
+						to="/student"
+						title="Alunos"
+						icon={<GraduationCap size={20} />}
+					/>
 					<MenuItem
 						to="/exercise"
 						title="Exercícios"
-						icon="material-symbols:exercise-outline"
+						icon={<Dumbbell size={20} />}
 					/>
 				</ul>
 			</aside>
@@ -67,7 +71,7 @@ function AuthenticatedLayout() {
 
 interface MenuItemProps {
 	title: string;
-	icon: string;
+	icon: JSX.Element;
 }
 
 function MenuItem({ to, icon, title }: MenuItemProps & Pick<LinkProps, "to">) {
@@ -79,7 +83,7 @@ function MenuItem({ to, icon, title }: MenuItemProps & Pick<LinkProps, "to">) {
 					data-expanded={expanded.value}
 					data-active={isActive}
 				>
-					<Icon icon={icon} width={20} height={20} />
+					{icon}
 					<p
 						data-expanded={expanded.value}
 						class="data-[expanded=false]:hidden data-[expanded=false]:group-hover:inline truncate"
