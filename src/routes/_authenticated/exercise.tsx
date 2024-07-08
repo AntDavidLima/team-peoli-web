@@ -25,9 +25,14 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import { api } from "@/lib/api";
+import { APIError, api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	keepPreviousData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
 import { useForm } from "react-hook-form";
@@ -43,13 +48,18 @@ import {
 	AlertDialogFooter,
 	AlertDialogAction,
 	AlertDialogCancel,
+	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { signal } from "@preact/signals";
 import { Badge } from "@/components/ui/badge";
-import { EditorState, convertToRaw } from "draft-js";
+import { EditorState, convertToRaw, convertFromRaw } from "draft-js";
 import "@/../node_modules/react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { TargetedEvent } from "preact/compat";
+import _ from "lodash";
+import { AxiosError } from "axios";
+import { toast } from "@/components/ui/use-toast";
 
 interface SelectOption {
 	label: string;
@@ -64,8 +74,12 @@ const isAddMuscleGroupDialogOpen = signal(false);
 const isUpdateMuscleGroupWeightDialogOpen = signal(false);
 
 const exerciseSearchSchema = yup.object({
-	rows: yup.number().optional(),
+	rows: yup.number().optional().default(10),
+	page: yup.number().optional().default(1),
+	query: yup.string().optional().default(""),
 });
+
+type ExerciseSearch = yup.InferType<typeof exerciseSearchSchema>;
 
 export const Route = createFileRoute("/_authenticated/exercise")({
 	component: Exercise,
@@ -89,26 +103,8 @@ export interface MuscleGroup {
 	name: string;
 }
 
-const tableColumns: ColumnDef<Exercise>[] = [
-	{
-		accessorKey: "name",
-		header: "Nome",
-	},
-	{ accessorKey: "restTime", header: "Tempo de descanso" },
-	{
-		accessorKey: "muscleGroups",
-		header: "Grupos musculares",
-		cell: ({ row }) => (
-			<div className="space-x-1">
-				{row.original.muscleGroups.map((muscleGroup) => (
-					<Badge key={muscleGroup.muscleGroup.id} variant="secondary">
-						{muscleGroup.muscleGroup.name} x {muscleGroup.weight}
-					</Badge>
-				))}
-			</div>
-		),
-	},
-];
+const edittingExerciseId = signal<number | null>(null);
+const isCreationFormOpen = signal(false);
 
 const createExerciseFormSchema = yup.object({
 	name: yup.string().required("Campo obrigatório"),
@@ -128,6 +124,24 @@ const createExerciseFormSchema = yup.object({
 
 type CreateExerciseForm = yup.InferType<typeof createExerciseFormSchema>;
 
+const updateExerciseFormSchema = yup.object({
+	name: yup.string().required("Campo obrigatório"),
+	instructions: yup.mixed<EditorState>().required(),
+	restTime: yup.number().typeError("Tempo de descanso inválido"),
+	muscleGroups: yup
+		.array(
+			yup.object({
+				value: yup.number().required(),
+				label: yup.string().required(),
+				weight: yup.number().required(),
+			}),
+		)
+		.min(1, "Selecione ao menos um grupo")
+		.required(),
+});
+
+type UpdateExerciseForm = yup.InferType<typeof updateExerciseFormSchema>;
+
 interface CreateMuscleGroupForm {
 	name: string;
 }
@@ -135,7 +149,97 @@ interface CreateMuscleGroupForm {
 function Exercise() {
 	const navigate = useNavigate();
 
-	const { rows } = Route.useSearch();
+	const tableColumns: ColumnDef<Exercise>[] = [
+		{
+			accessorKey: "name",
+			header: "Nome",
+		},
+		{ accessorKey: "restTime", header: "Tempo de descanso" },
+		{
+			accessorKey: "muscleGroups",
+			header: "Grupos musculares",
+			cell: ({ row }) => (
+				<div className="space-x-1">
+					{row.original.muscleGroups.map((muscleGroup) => (
+						<Badge key={muscleGroup.muscleGroup.id} variant="secondary">
+							{muscleGroup.muscleGroup.name} x {muscleGroup.weight}
+						</Badge>
+					))}
+				</div>
+			),
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => (
+				<div class="invisible group-hover:visible text-right space-x-1">
+					<Button
+						size="icon"
+						variant="ghost"
+						onClick={(e) => {
+							e.stopPropagation();
+							edittingExerciseId.value = row.original.id;
+							Object.entries(row.original).forEach(([key, value]) => {
+								if (key === "instructions") {
+									form.setValue(
+										"instructions",
+										value
+											? EditorState.createWithContent(convertFromRaw(value))
+											: EditorState.createEmpty(),
+									);
+
+									return;
+								}
+
+								if (key === "muscleGroups") {
+									form.setValue(
+										"muscleGroups",
+										value.map((muscleGroup: ExercisedMuscleGroup) => ({
+											value: muscleGroup.muscleGroup.id,
+											label: muscleGroup.muscleGroup.name,
+											weight: muscleGroup.weight,
+										})),
+									);
+
+									return;
+								}
+
+								form.setValue(key as keyof CreateExerciseForm, value);
+							});
+							isCreationFormOpen.value = true;
+						}}
+					>
+						<Pencil size={14} />
+					</Button>
+					<AlertDialog>
+						<AlertDialogTrigger onClick={(e) => e.stopPropagation()}>
+							<Button size="icon" variant="ghost">
+								<Trash2 size={14} />
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Remover exercício</AlertDialogTitle>
+								<AlertDialogDescription>
+									Tem certeza que deseja remover este exercício?
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancelar</AlertDialogCancel>
+								<AlertDialogAction
+									className="bg-destructive hover:bg-destructive/80"
+									onClick={() => removeExercise(row.original.id)}
+								>
+									Deletar
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				</div>
+			),
+		},
+	];
+
+	const { rows, query, page } = Route.useSearch();
 
 	const form = useForm<CreateExerciseForm>({
 		resolver: yupResolver(createExerciseFormSchema),
@@ -145,18 +249,71 @@ function Exercise() {
 		},
 	});
 
+	const debouncedSearchExercise = _.debounce((query: string) => {
+		navigate({
+			search: (previousSearch) => ({
+				...previousSearch,
+				query,
+			}),
+		});
+	}, 300);
+
 	const queryClient = useQueryClient();
 
-	const { data: exercises } = useQuery({
-		queryKey: ["exercises"],
-		queryFn: fetchExercises,
-		initialData: [],
+	const {
+		data: [totalExercises, exercises],
+		isFetching: loadingExercises,
+	} = useQuery({
+		queryKey: ["exercises", rows, query, page],
+		queryFn: () => fetchExercises({ rows, query, page }),
+		initialData: [0, []],
+		placeholderData: keepPreviousData,
+	});
+
+	const { mutate: patchExercise } = useMutation({
+		mutationFn: updateExercise,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["exercises"] });
+			isCreationFormOpen.value = false;
+			form.reset();
+		},
+		onError: (error) => {
+			if (error instanceof AxiosError) {
+				const apiError = error.response?.data as APIError;
+
+				if (typeof apiError.error === "string") {
+					toast({
+						title: apiError.message,
+						variant: "destructive",
+					});
+				}
+			}
+		},
 	});
 
 	const { mutate: addExercise } = useMutation({
 		mutationFn: createExercise,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["exercises"] });
+		},
+	});
+
+	const { mutate: removeExercise } = useMutation({
+		mutationFn: deleteExercise,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["exercises"] });
+		},
+		onError: (error) => {
+			if (error instanceof AxiosError) {
+				const apiError = error.response?.data as APIError;
+
+				if (typeof apiError.error === "string") {
+					toast({
+						title: apiError.message,
+						variant: "destructive",
+					});
+				}
+			}
 		},
 	});
 
@@ -200,6 +357,8 @@ function Exercise() {
 						id="search"
 						placeholder="Buscar exercício..."
 						class="bg-transparent border-muted border-2 rounded p-2 outline-none focus:border-primary"
+						value={query}
+						onChange={handleQueryChange}
 					/>
 					<AlertDialog
 						open={isDeleteMuscleGroupDialogOpen.value}
@@ -338,17 +497,30 @@ function Exercise() {
 							</AlertDialogFooter>
 						</AlertDialogContent>
 					</AlertDialog>
-					<Sheet>
+					<Sheet
+						open={isCreationFormOpen.value}
+						onOpenChange={(open) => {
+							isCreationFormOpen.value = open;
+							edittingExerciseId.value && setTimeout(() => form.reset(), 500);
+							edittingExerciseId.value = null;
+						}}
+					>
 						<SheetTrigger asChild>
 							<Button>Criar exercício</Button>
 						</SheetTrigger>
 						<SheetContent>
-							<SheetHeader>
-								<SheetTitle>Criar exercício</SheetTitle>
+							<SheetHeader className="mb-4">
+								<SheetTitle>
+									{edittingExerciseId.value
+										? "Editar exercício"
+										: "Criar exercício"}
+								</SheetTitle>
 							</SheetHeader>
 							<Form {...form}>
 								<form
-									onSubmit={form.handleSubmit(addExercise)}
+									onSubmit={form.handleSubmit(
+										edittingExerciseId.value ? patchExercise : addExercise,
+									)}
 									class="space-y-6"
 								>
 									<FormField
@@ -495,13 +667,19 @@ function Exercise() {
 											</FormItem>
 										)}
 									/>
-									<Button>Criar</Button>
+									<Button>
+										{edittingExerciseId.value ? "Salvar" : "Criar"}
+									</Button>
 								</form>
 							</Form>
 						</SheetContent>
 					</Sheet>
 				</div>
-				<DataGrid<Exercise> rows={exercises} columns={tableColumns} />
+				<DataGrid<Exercise>
+					rows={exercises}
+					columns={tableColumns}
+					isLoading={loadingExercises}
+				/>
 				<div class="flex items-center p-2 border-t-muted border-t gap-4 justify-end text-sm">
 					<div class="flex items-center gap-2">
 						<p>Linhas por página:</p>
@@ -521,10 +699,20 @@ function Exercise() {
 					</div>
 					<p>1-10 de 10</p>
 					<div class="flex items-center">
-						<Button variant="ghost" size="icon">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handlePreviousPageClick}
+							disabled={page === 1}
+						>
 							<ChevronLeft size={20} />
 						</Button>
-						<Button variant="ghost" size="icon">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={handleNextPageClick}
+							disabled={page * rows >= totalExercises}
+						>
 							<ChevronRight size={20} />
 						</Button>
 					</div>
@@ -533,8 +721,14 @@ function Exercise() {
 		</Page>
 	);
 
-	async function fetchExercises() {
-		const { data: exercises } = await api.get("/exercise");
+	async function fetchExercises({ query, rows, page }: ExerciseSearch) {
+		const { data: exercises } = await api.get("/exercise", {
+			params: {
+				query,
+				rows,
+				page,
+			},
+		});
 
 		return exercises;
 	}
@@ -556,6 +750,24 @@ function Exercise() {
 		const instructionsRawDraft = convertToRaw(instructions.getCurrentContent());
 
 		await api.post("/exercise", {
+			name,
+			restTime,
+			instructions: instructionsRawDraft,
+			muscleGroups: muscleGroups.map(
+				({ label, ...muscleGroup }) => muscleGroup,
+			),
+		});
+	}
+
+	async function updateExercise({
+		instructions,
+		name,
+		muscleGroups,
+		restTime,
+	}: UpdateExerciseForm) {
+		const instructionsRawDraft = convertToRaw(instructions.getCurrentContent());
+
+		await api.patch(`/exercise/${edittingExerciseId.value}`, {
 			name,
 			restTime,
 			instructions: instructionsRawDraft,
@@ -597,6 +809,32 @@ function Exercise() {
 		await api.put(`/muscle-group/${value}`, {
 			name: label,
 		});
+	}
+
+	function handleQueryChange(event: TargetedEvent<HTMLInputElement>) {
+		debouncedSearchExercise(event.currentTarget.value);
+	}
+
+	function handleNextPageClick() {
+		navigate({
+			search: (previousSearch) => ({
+				...previousSearch,
+				page: page + 1,
+			}),
+		});
+	}
+
+	function handlePreviousPageClick() {
+		navigate({
+			search: (previousSearch) => ({
+				...previousSearch,
+				page: page - 1,
+			}),
+		});
+	}
+
+	async function deleteExercise(id: number) {
+		await api.delete(`/exercise/${id}`);
 	}
 }
 
