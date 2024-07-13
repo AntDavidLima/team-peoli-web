@@ -52,7 +52,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { signal } from "@preact/signals";
 import { Badge } from "@/components/ui/badge";
-import { EditorState, convertToRaw, convertFromRaw } from "draft-js";
+import {
+	EditorState,
+	convertToRaw,
+	convertFromRaw,
+	RawDraftContentState,
+} from "draft-js";
 import "@/../node_modules/react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
@@ -91,6 +96,7 @@ export interface Exercise {
 	name: string;
 	restTime: number;
 	muscleGroups: ExercisedMuscleGroup[];
+	instructions: RawDraftContentState;
 }
 
 interface ExercisedMuscleGroup {

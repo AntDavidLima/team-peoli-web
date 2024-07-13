@@ -80,7 +80,7 @@ type CreateStudentForm = yup.InferType<typeof createStudentFormSchema>;
 type UpdateStudentForm = CreateStudentForm;
 
 export const Route = createFileRoute("/_authenticated/student/")({
-	component: Student,
+	component: StudentsList,
 	validateSearch: (search) => studentSearchSchema.validateSync(search),
 });
 
@@ -94,7 +94,7 @@ export interface Student {
 const isCreationFormOpen = signal(false);
 const edittingStudentId = signal<number | null>(null);
 
-function Student() {
+function StudentsList() {
 	const queryClient = useQueryClient();
 
 	const { rows, page, query } = Route.useSearch();

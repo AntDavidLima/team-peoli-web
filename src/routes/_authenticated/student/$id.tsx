@@ -1,18 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-} from "@/components/ui/command";
-import {
 	Form,
 	FormControl,
 	FormField,
 	FormItem,
-	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -22,7 +14,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -30,14 +21,12 @@ import { signal } from "@preact/signals";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, subMonths } from "date-fns";
-import { ptBR } from "date-fns/locale/pt-BR";
-import { EditorState, convertToRaw } from "draft-js";
-import { CalendarIcon, Plus, Save, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CalendarIcon, Plus } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { Student } from ".";
-import { Exercise, MuscleGroup } from "../exercise";
+import { MuscleGroup } from "../exercise";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
 import {
@@ -50,8 +39,9 @@ import {
 	VictoryScatter,
 	VictoryStack,
 } from "victory";
+import { Routine, RoutineProps } from "./-components/Routine";
 
-enum Day {
+export enum Day {
 	SUNDAY = "D",
 	MONDAY = "S",
 	TUESDAY = "T",
@@ -62,47 +52,28 @@ enum Day {
 }
 
 export const Route = createFileRoute("/_authenticated/student/$id")({
-	component: Component,
+	component: StudentDetails,
 });
 
-interface Routine {
-	id: number;
-	name: string;
-}
-
-const routineFormSchema = yup.object({
+export const routineFormSchema = yup.object({
 	name: yup.string().required("Campo obrigatório"),
-	startDate: yup
-		.date()
-		.typeError("Data inválida")
-		.required("Campo obrigatório"),
-	endDate: yup.date().typeError("Data inválida"),
-	orientations: yup.mixed<EditorState>().required(),
-	trainings: yup.array().of(
-		yup.object({
-			name: yup.string().required("Campo obrigatório"),
-			day: yup.mixed<Day>().required("Campo obrigatório"),
-			exercises: yup.array().of(
-				yup.object({
-					sets: yup.number().required("Campo obrigatório"),
-					reps: yup.number().required("Campo obrigatório"),
-					exercise_id: yup.number().required("Campo obrigatório"),
-					orientations: yup.mixed<EditorState>().required("Campo obrigatório"),
-					rest_time: yup.number().required("Campo obrigatório"),
-				}),
-			),
-		}),
-	),
 });
 
 type RoutineFormSchema = yup.InferType<typeof routineFormSchema>;
 
-type TotalSetsByMuscleGroup = Record<number, number>;
+export type TotalSetsByMuscleGroup = Record<number, number>;
 
-const totalSetsByMuscleGroup = signal<TotalSetsByMuscleGroup>({});
+export const totalSetsByMuscleGroup = signal<TotalSetsByMuscleGroup>({});
 
-function Component() {
+function StudentDetails() {
 	const { id } = Route.useParams();
+
+	const form = useForm({
+		resolver: yupResolver(routineFormSchema),
+		defaultValues: {
+			name: "",
+		},
+	});
 
 	const queryClient = useQueryClient();
 
@@ -121,27 +92,20 @@ function Component() {
 	);
 
 	const { data: student, isLoading: loadingStudent } = useQuery({
-		queryKey: [`student/${id}`],
+		queryKey: [`student`, id],
 		queryFn: () => fetchStudent(id),
 	});
 
 	const { data: routines } = useQuery({
-		queryKey: [`student/${id}/routines`],
+		queryKey: ["student", id, "routines"],
 		queryFn: () => fetchRoutines(id),
 	});
 
 	const { mutate: addRoutine } = useMutation({
 		mutationFn: createRoutine,
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: [`student/${id}/routines`] });
-		},
-	});
-
-	const form = useForm({
-		resolver: yupResolver(routineFormSchema),
-		defaultValues: {
-			startDate: new Date(),
-			orientations: EditorState.createEmpty(),
+			queryClient.invalidateQueries({ queryKey: ["student", id, "routines"] });
+			form.reset();
 		},
 	});
 
@@ -160,7 +124,10 @@ function Component() {
 					<div class="flex gap-4">
 						<div>
 							<div class="bg-card rounded p-2 w-60 sticky left-0 -top-10">
-								<p class="font-semibold">Séries por grupo muscular</p>
+								<p class="font-bold">Séries por grupo muscular</p>
+								{Object.entries(totalSetsByMuscleGroup.value).length === 0 && (
+									<p class="text-muted mt-1">Nenhum treino cadastrado</p>
+								)}
 								{Object.entries(totalSetsByMuscleGroup.value).map(
 									([muscleGroupId, sets]) => (
 										<div class="flex justify-between">
@@ -173,7 +140,15 @@ function Component() {
 						</div>
 						<div class="space-y-4 w-full">
 							{routines?.map((routine) => (
-								<Routine key={routine.id} name={routine.name} />
+								<Routine
+									key={routine.id}
+									name={routine.name}
+									id={routine.id}
+									startDate={routine.startDate}
+									endDate={routine.endDate}
+									orientations={routine.orientations}
+									trainings={routine.trainings}
+								/>
 							))}
 							<div class="bg-card rounded p-6">
 								<Form {...form}>
@@ -568,27 +543,18 @@ function Component() {
 		</Page>
 	);
 
-	async function createRoutine({
-		name,
-		endDate,
-		startDate,
-		orientations,
-	}: RoutineFormSchema) {
-		const orientationsRawDraft = convertToRaw(orientations.getCurrentContent());
-
+	async function createRoutine({ name }: RoutineFormSchema) {
 		const { data: routine } = await api.post("/routine", {
 			name,
-			endDate,
-			startDate,
-			orientations: orientationsRawDraft,
 			userId: id,
+			startDate: new Date(),
 		});
 
 		return routine;
 	}
 
 	async function fetchRoutines(userId: string) {
-		const { data: routines } = await api.get<Routine[]>(`/routine`, {
+		const { data: routines } = await api.get<RoutineProps[]>(`/routine`, {
 			params: {
 				userId,
 			},
@@ -608,390 +574,5 @@ function Component() {
 			await api.get<MuscleGroup[]>("/muscle-group");
 
 		return muscleGroups;
-	}
-}
-
-interface RoutineProps {
-	name: string;
-}
-
-function Routine({ name }: RoutineProps) {
-	const form = useForm({
-		resolver: yupResolver(routineFormSchema),
-		defaultValues: {
-			startDate: new Date(),
-			orientations: EditorState.createEmpty(),
-			name,
-			trainings: [],
-		},
-	});
-
-	const { data: exercises } = useQuery({
-		queryKey: [`student/exercises`],
-		queryFn: fetchExercises,
-	});
-
-	useEffect(() => {
-		totalSetsByMuscleGroup.value = (form.watch("trainings") || []).reduce(
-			(setsByMuscleGroupOnTrainig, training) => {
-				const totalSetsByMuscleGroupOnExercise = (
-					training.exercises || []
-				).reduce((setsByMuscleGroupOnExercise, exercise) => {
-					const apiExercise = exercises?.find(
-						(apiExercise) => apiExercise.id === exercise.exercise_id,
-					);
-
-					const totalSetsByMuscleGroupOnExercisedMuscleGroups = (
-						apiExercise?.muscleGroups || []
-					).reduce(
-						(setsByMuscleGroupOnExercisedMuscleGroup, exercisedMuscleGroup) => {
-							return mergeSetsByMuscleGroup(
-								setsByMuscleGroupOnExercisedMuscleGroup,
-								{
-									[exercisedMuscleGroup.muscleGroup.id]:
-										exercise.sets * exercisedMuscleGroup.weight,
-								},
-							);
-						},
-						{},
-					);
-
-					return mergeSetsByMuscleGroup(
-						setsByMuscleGroupOnExercise,
-						totalSetsByMuscleGroupOnExercisedMuscleGroups,
-					);
-				}, {});
-
-				return mergeSetsByMuscleGroup(
-					setsByMuscleGroupOnTrainig,
-					totalSetsByMuscleGroupOnExercise,
-				);
-			},
-			{},
-		);
-	}, [JSON.stringify(form.watch("trainings"))]);
-
-	return (
-		<div class="bg-card rounded p-6">
-			<Form {...form}>
-				<form onSubmit={form.handleSubmit(() => { })} class="space-y-4">
-					<FormField
-						control={form.control}
-						name="name"
-						render={({ field }) => (
-							<FormItem className="flex-1">
-								<FormControl>
-									<div class="flex items-center gap-2">
-										<Input placeholder="Nome da rotina de treinos" {...field} />
-										<Button size="icon" variant="ghost" type="button">
-											<Trash2 size={16} />
-										</Button>
-										<Button size="icon" variant="ghost" type="submit">
-											<Save size={16} />
-										</Button>
-									</div>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<div class="flex gap-4">
-						<FormField
-							control={form.control}
-							name="startDate"
-							render={({ field: { value, onChange } }) => (
-								<FormItem className="flex-1">
-									<FormLabel>Início</FormLabel>
-									<Popover>
-										<FormControl>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													className="w-full normal-case"
-												>
-													{value ? (
-														format(value, "dd 'de' MMMM 'de' yyyy", {
-															locale: ptBR,
-														})
-													) : (
-														<span>Selecione uma data</span>
-													)}
-												</Button>
-											</PopoverTrigger>
-										</FormControl>
-										<PopoverContent>
-											<Calendar
-												mode="single"
-												selected={value}
-												onSelect={onChange}
-											/>
-										</PopoverContent>
-									</Popover>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-						<FormField
-							control={form.control}
-							name="endDate"
-							render={({ field: { value, onChange } }) => (
-								<FormItem className="flex-1">
-									<FormLabel>Fim</FormLabel>
-									<Popover>
-										<FormControl>
-											<PopoverTrigger asChild>
-												<Button
-													variant="outline"
-													className="w-full normal-case"
-												>
-													{value ? (
-														format(value, "dd 'de' MMMM 'de' yyyy", {
-															locale: ptBR,
-														})
-													) : (
-														<span>Selecione uma data</span>
-													)}
-												</Button>
-											</PopoverTrigger>
-										</FormControl>
-										<PopoverContent>
-											<Calendar
-												mode="single"
-												selected={value}
-												onSelect={onChange}
-												initialFocus
-											/>
-										</PopoverContent>
-									</Popover>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					</div>
-					<FormField
-						control={form.control}
-						name="orientations"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>Orientações gerais</FormLabel>
-								<FormControl>
-									<RichTextEditor
-										{...field}
-										placeholder="Orientaçoes para a rotina como um todo"
-									/>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<Tabs defaultValue="MONDAY" class="flex flex-col items-center">
-						<TabsList className="bg-background w-fit rounded-full data-[state='active']:[&>button]:bg-primary [&>button]:rounded-full">
-							{Object.entries(Day).map(([value, label]) => (
-								<TabsTrigger key={value} value={value}>
-									{label}
-								</TabsTrigger>
-							))}
-						</TabsList>
-						{Object.keys(Day).map((value, index) => (
-							<TabsContent
-								key={value}
-								value={value}
-								className="w-full space-y-6 mt-2"
-							>
-								<FormField
-									control={form.control}
-									name={`trainings.${index}.name`}
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Nome do treino</FormLabel>
-											<FormControl>
-												<Input placeholder="Treino de x" {...field} />
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								{form
-									.getValues(`trainings.${index}.exercises`)
-									?.map((_exercise, trainingIndex) => (
-										<div class="border border-white rounded p-4 border-dashed space-y-6">
-											<div class="grid grid-cols-5 gap-2">
-												<FormField
-													control={form.control}
-													name={`trainings.${index}.exercises.${trainingIndex}.exercise_id`}
-													render={({ field: { value } }) => (
-														<FormItem className="col-span-2">
-															<FormLabel>Exercício</FormLabel>
-															<Popover>
-																<FormControl>
-																	<PopoverTrigger asChild>
-																		<Button
-																			variant="outline"
-																			className="w-full normal-case"
-																			role="combobox"
-																		>
-																			{value ? (
-																				exercises?.find(
-																					(exercise) => exercise.id === value,
-																				)?.name
-																			) : (
-																				<span>Selecione um exercício</span>
-																			)}
-																		</Button>
-																	</PopoverTrigger>
-																</FormControl>
-																<PopoverContent>
-																	<Command>
-																		<CommandInput placeholder="Buscar exercício..." />
-																		<CommandEmpty>
-																			Exercício não encontrado.
-																		</CommandEmpty>
-																		<CommandGroup>
-																			{exercises?.map((exercise) => (
-																				<CommandItem
-																					value={exercise.id.toString()}
-																					key={exercise.id}
-																					onSelect={() => {
-																						form.setValue(
-																							`trainings.${index}.exercises.${trainingIndex}.exercise_id`,
-																							exercise.id,
-																						);
-																					}}
-																				>
-																					{exercise.name}
-																				</CommandItem>
-																			))}
-																		</CommandGroup>
-																	</Command>
-																</PopoverContent>
-															</Popover>
-															<FormMessage />
-														</FormItem>
-													)}
-												/>
-												<FormField
-													control={form.control}
-													name={`trainings.${index}.exercises.${trainingIndex}.sets`}
-													render={({ field }) => (
-														<FormItem>
-															<FormLabel>Séries</FormLabel>
-															<FormControl>
-																<Input
-																	type="number"
-																	placeholder="0"
-																	{...field}
-																/>
-															</FormControl>
-															<FormMessage />
-														</FormItem>
-													)}
-												/>
-												<FormField
-													control={form.control}
-													name={`trainings.${index}.exercises.${trainingIndex}.reps`}
-													render={({ field }) => (
-														<FormItem>
-															<FormLabel>Repetições</FormLabel>
-															<FormControl>
-																<Input
-																	type="number"
-																	placeholder="0"
-																	{...field}
-																/>
-															</FormControl>
-															<FormMessage />
-														</FormItem>
-													)}
-												/>
-												<FormField
-													control={form.control}
-													name={`trainings.${index}.exercises.${trainingIndex}.rest_time`}
-													render={({ field }) => (
-														<FormItem>
-															<FormLabel>Tempo de descanço</FormLabel>
-															<FormControl>
-																<Input
-																	type="number"
-																	placeholder="0s"
-																	{...field}
-																/>
-															</FormControl>
-															<FormMessage />
-														</FormItem>
-													)}
-												/>
-											</div>
-											<FormField
-												control={form.control}
-												name={`trainings.${index}.exercises.${trainingIndex}.orientations`}
-												render={({ field }) => (
-													<FormItem>
-														<FormLabel>Orientações do exercício</FormLabel>
-														<FormControl>
-															<RichTextEditor
-																{...field}
-																placeholder="Orientações específicas para o aluno"
-															/>
-														</FormControl>
-														<FormMessage />
-													</FormItem>
-												)}
-											/>
-										</div>
-									))}
-								<div class="flex justify-center">
-									<Button
-										type="button"
-										onClick={() => {
-											form.setValue(
-												`trainings.${index}.exercises`,
-												[
-													...(form.getValues(`trainings.${index}.exercises`) ||
-														[]),
-													{
-														exercise_id: 0,
-														orientations: EditorState.createEmpty(),
-														reps: 0,
-														rest_time: 0,
-														sets: 0,
-													},
-												],
-												{ shouldDirty: true },
-											);
-										}}
-									>
-										Adicionar exercício
-									</Button>
-								</div>
-							</TabsContent>
-						))}
-					</Tabs>
-				</form>
-			</Form>
-		</div>
-	);
-
-	async function fetchExercises() {
-		const { data: exercises } = await api.get<Exercise[]>("/exercise");
-
-		return exercises;
-	}
-
-	function mergeSetsByMuscleGroup(
-		total: TotalSetsByMuscleGroup,
-		current: TotalSetsByMuscleGroup,
-	) {
-		return Object.entries(current).reduce(
-			(accumulatedSetsByMuscleGroup, muscleGroup) => {
-				const [muscleGroupId, sets] = muscleGroup;
-
-				return {
-					...accumulatedSetsByMuscleGroup,
-					[muscleGroupId]:
-						(accumulatedSetsByMuscleGroup[Number(muscleGroupId)] || 0) + sets,
-				};
-			},
-			total,
-		);
 	}
 }
