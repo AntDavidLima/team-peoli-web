@@ -303,6 +303,8 @@ function Exercise() {
 		mutationFn: createExercise,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["exercises"] });
+			isCreationFormOpen.value = false;
+			form.reset();
 		},
 	});
 
