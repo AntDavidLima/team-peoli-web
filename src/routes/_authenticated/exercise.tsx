@@ -126,6 +126,7 @@ const createExerciseFormSchema = yup.object({
 		)
 		.min(1, "Selecione ao menos um grupo")
 		.required(),
+	executionVideoUrl: yup.string().url("URL inválida"),
 });
 
 type CreateExerciseForm = yup.InferType<typeof createExerciseFormSchema>;
@@ -144,6 +145,7 @@ const updateExerciseFormSchema = yup.object({
 		)
 		.min(1, "Selecione ao menos um grupo")
 		.required(),
+	executionVideoUrl: yup.string().url("URL inválida"),
 });
 
 type UpdateExerciseForm = yup.InferType<typeof updateExerciseFormSchema>;
@@ -659,6 +661,25 @@ function Exercise() {
 									/>
 									<FormField
 										control={form.control}
+										name="executionVideoUrl"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Link do vídeo de execução</FormLabel>
+												<FormControl>
+													<Input
+														placeholder="https://www.youtube.com/watch?v=..."
+														{...field}
+													/>
+												</FormControl>
+												<FormMessage />
+												<FormDescription>
+													Copie e cole o link completo do vídeo de execução
+												</FormDescription>
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={form.control}
 										name="instructions"
 										render={({ field }) => (
 											<FormItem>
@@ -752,6 +773,7 @@ function Exercise() {
 		restTime,
 		instructions,
 		muscleGroups,
+		executionVideoUrl,
 	}: CreateExerciseForm) {
 		const instructionsRawDraft = convertToRaw(instructions.getCurrentContent());
 
@@ -762,6 +784,7 @@ function Exercise() {
 			muscleGroups: muscleGroups.map(
 				({ label, ...muscleGroup }) => muscleGroup,
 			),
+			executionVideoUrl,
 		});
 	}
 
@@ -770,6 +793,7 @@ function Exercise() {
 		name,
 		muscleGroups,
 		restTime,
+		executionVideoUrl,
 	}: UpdateExerciseForm) {
 		const instructionsRawDraft = convertToRaw(instructions.getCurrentContent());
 
@@ -780,6 +804,7 @@ function Exercise() {
 			muscleGroups: muscleGroups.map(
 				({ label, ...muscleGroup }) => muscleGroup,
 			),
+			executionVideoUrl,
 		});
 	}
 
