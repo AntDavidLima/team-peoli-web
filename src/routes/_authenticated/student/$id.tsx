@@ -65,6 +65,25 @@ export type TotalSetsByMuscleGroup = Record<number, number>;
 
 export const totalSetsByMuscleGroup = signal<TotalSetsByMuscleGroup>({});
 
+interface Exercise {
+	id: number;
+	name: string;
+	workouts: Workout[];
+}
+
+interface Workout {
+	WorkoutExerciseSets: WorkoutExerciseSet[];
+	workout: {
+		startTime: string;
+	};
+}
+
+interface WorkoutExerciseSet {
+	id: number;
+	load: number;
+	reps: number;
+}
+
 function StudentDetails() {
 	const { id } = Route.useParams();
 
@@ -80,6 +99,11 @@ function StudentDetails() {
 	const [date, setDate] = useState<DateRange | undefined>({
 		to: new Date(),
 		from: subMonths(new Date(), 1),
+	});
+
+	const { data: exercises } = useQuery({
+		queryKey: ["student", id, "exercises"],
+		queryFn: fetchUserExercises,
 	});
 
 	const { data: muscleGroups } = useQuery({
@@ -229,319 +253,255 @@ function StudentDetails() {
 						</defs>
 					</svg>
 					<div class="grid-cols-2 grid mt-4 gap-4">
-						<div class="bg-card items-center flex flex-col rounded py-4">
-							<h2 class="text-lg font-semibold">Supino reto</h2>
-							<VictoryChart domain={{ y: [0, 4] }} height={300}>
-								<VictoryAxis
-									dependentAxis
-									tickFormat={(tick) => Math.floor((tick * 40) / 3)}
-									style={{
-										tickLabels: { fill: "white" },
-										axis: { stroke: "#0B69D4", strokeWidth: 4 },
-									}}
-								/>
-								<VictoryAxis
-									dependentAxis
-									tickFormat={(tick) => Math.floor((tick * 12) / 3)}
-									offsetX={400}
-									style={{
-										tickLabels: { textAnchor: "start", fill: "white" },
-										ticks: {
-											padding: -20,
-										},
-										axis: { stroke: "#C43343", strokeWidth: 4 },
-									}}
-								/>
-								<VictoryStack>
-									<VictoryChart>
+						{exercises?.map(({ name, id, workouts }) => {
+							const workoutMetadata = workouts.reduce(
+								(accumulator, workout) => {
+									const localMaxes = workout.WorkoutExerciseSets.reduce(
+										(localAccumulator, set) => ({
+											maxLoad: Math.max(localAccumulator.maxLoad, set.load),
+											maxReps: Math.max(localAccumulator.maxReps, set.reps),
+										}),
+										{ maxLoad: 0, maxReps: 0 },
+									);
+
+									return {
+										maxLoad: Math.max(accumulator.maxLoad, localMaxes.maxLoad),
+										maxReps: Math.max(accumulator.maxReps, localMaxes.maxReps),
+										maxSets: Math.max(
+											accumulator.maxSets,
+											workout.WorkoutExerciseSets.length,
+										),
+									};
+								},
+								{ maxLoad: 0, maxReps: 0, maxSets: 0 },
+							);
+
+							return (
+								<div
+									class="bg-card items-center flex flex-col rounded py-4"
+									key={id}
+								>
+									<h2 class="text-lg font-semibold">{name}</h2>
+									<VictoryChart
+										domain={{ y: [0, workoutMetadata.maxSets + 1] }}
+										height={300}
+									>
 										<VictoryAxis
-											tickValues={["3", "4", "5"]}
+											dependentAxis
+											tickFormat={(tick) =>
+												Math.floor(
+													(tick * workoutMetadata.maxLoad) /
+													workoutMetadata.maxSets,
+												)
+											}
 											style={{
 												tickLabels: { fill: "white" },
-												axis: {
-													strokeWidth: 4,
-													stroke: "url(#blue-to-red)",
-												},
+												axis: { stroke: "#0B69D4", strokeWidth: 4 },
 											}}
 										/>
-										<VictoryGroup
-											data={[
-												{ day: "3", load: 100 },
-												{ day: "4", load: 110 },
-												{ day: "5", load: 120 },
-											]}
-											color="#0B69D4"
-											y={(segment) => segment.load / 120 + 2.5}
-											x="day"
-										>
-											<VictoryScatter />
-											<VictoryLine />
-										</VictoryGroup>
-										<VictoryGroup
-											data={[
-												{ day: "3", reps: 30 },
-												{ day: "4", reps: 28 },
-												{ day: "5", reps: 32 },
-											]}
-											color="#C43343"
-											x="day"
-											y={(segment) => segment.reps / 32 + 2.5}
-										>
-											<VictoryScatter />
-											<VictoryLine
-												style={{
-													data: { strokeDasharray: "15, 5" },
-												}}
-											/>
-										</VictoryGroup>
-									</VictoryChart>
-									<VictoryGroup
-										offset={32}
-										style={{ labels: { fill: "white" } }}
-									>
-										<VictoryStack colorScale="cool">
-											<VictoryBar
-												data={[
-													{ day: "3", load: 30 },
-													{ day: "4", load: 40 },
-													{ day: "5", load: 40 },
-												]}
-												x="day"
-												y={(segment) => segment.load / 40}
-												labels={({ datum }) => datum.load}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", load: 35 },
-													{ day: "4", load: 35 },
-													{ day: "5", load: 40 },
-												]}
-												x="day"
-												y={(segment) => segment.load / 40}
-												labels={({ datum }) => datum.load}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", load: 35 },
-													{ day: "4", load: 35 },
-													{ day: "5", load: 40 },
-												]}
-												x="day"
-												y={(segment) => segment.load / 40}
-												labels={({ datum }) => datum.load}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-										</VictoryStack>
-										<VictoryStack colorScale="warm">
-											<VictoryBar
-												data={[
-													{ day: "3", reps: 10 },
-													{ day: "4", reps: 8 },
-													{ day: "5", reps: 8 },
-												]}
-												x="day"
-												y={(segment) => segment.reps / 12}
-												labels={({ datum }) => datum.reps}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", reps: 10 },
-													{ day: "4", reps: 10 },
-													{ day: "5", reps: 12 },
-												]}
-												x="day"
-												y={(segment) => segment.reps / 12}
-												labels={({ datum }) => datum.reps}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", reps: 10 },
-													{ day: "4", reps: 10 },
-													{ day: "5", reps: 12 },
-												]}
-												x="day"
-												y={(segment) => segment.reps / 12}
-												labels={({ datum }) => datum.reps}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-										</VictoryStack>
-									</VictoryGroup>
-								</VictoryStack>
-							</VictoryChart>
-							<div class="flex justify-evenly w-full">
-								<div class="flex items-center gap-1">
-									<div class="rounded-full w-4 aspect-square bg-[#0B69D4]" />
-									<p>Carga</p>
-								</div>
-								<div class="flex items-center gap-1">
-									<div class="rounded-full w-4 aspect-square bg-[#C43343]" />
-									<p>Repetições</p>
-								</div>
-							</div>
-						</div>
-						<div class="bg-card items-center flex flex-col rounded py-4">
-							<h2 class="text-lg font-semibold">Supino torto</h2>
-							<VictoryChart domain={{ y: [0, 4] }} height={300}>
-								<VictoryAxis
-									dependentAxis
-									tickFormat={(tick) => Math.floor((tick * 40) / 3)}
-									style={{
-										tickLabels: { fill: "white" },
-										axis: { stroke: "#0B69D4", strokeWidth: 4 },
-									}}
-								/>
-								<VictoryAxis
-									dependentAxis
-									tickFormat={(tick) => Math.floor((tick * 12) / 3)}
-									offsetX={400}
-									style={{
-										tickLabels: { textAnchor: "start", fill: "white" },
-										ticks: {
-											padding: -20,
-										},
-										axis: { stroke: "#C43343", strokeWidth: 4 },
-									}}
-								/>
-								<VictoryStack>
-									<VictoryChart>
 										<VictoryAxis
-											tickValues={["3", "4", "5"]}
+											dependentAxis
+											tickFormat={(tick) =>
+												Math.floor(
+													(tick * workoutMetadata.maxReps) /
+													workoutMetadata.maxSets,
+												)
+											}
+											offsetX={400}
 											style={{
-												tickLabels: { fill: "white" },
-												axis: {
-													strokeWidth: 4,
-													stroke: "url(#blue-to-red)",
+												tickLabels: { textAnchor: "start", fill: "white" },
+												ticks: {
+													padding: -20,
 												},
+												axis: { stroke: "#C43343", strokeWidth: 4 },
 											}}
 										/>
-										<VictoryGroup
-											data={[
-												{ day: "3", load: 100 },
-												{ day: "4", load: 110 },
-												{ day: "5", load: 120 },
-											]}
-											color="#0B69D4"
-											y={(segment) => segment.load / 120 + 2.5}
-											x="day"
-										>
-											<VictoryScatter />
-											<VictoryLine />
-										</VictoryGroup>
-										<VictoryGroup
-											data={[
-												{ day: "3", reps: 30 },
-												{ day: "4", reps: 28 },
-												{ day: "5", reps: 32 },
-											]}
-											color="#C43343"
-											x="day"
-											y={(segment) => segment.reps / 32 + 2.5}
-										>
-											<VictoryScatter />
-											<VictoryLine
-												style={{
-													data: { strokeDasharray: "15, 5" },
-												}}
-											/>
-										</VictoryGroup>
+										<VictoryStack>
+											<VictoryChart>
+												<VictoryAxis
+													tickValues={workouts.map(({ workout }) =>
+														format(new Date(workout.startTime), "d"),
+													)}
+													style={{
+														tickLabels: { fill: "white" },
+														axis: {
+															strokeWidth: 4,
+															stroke: "url(#blue-to-red)",
+														},
+													}}
+												/>
+												<VictoryGroup
+													data={workouts.map(
+														({ workout, WorkoutExerciseSets }) => ({
+															day: format(new Date(workout.startTime), "d"),
+															load: WorkoutExerciseSets.reduce(
+																(total, set) => total + set.load,
+																0,
+															),
+														}),
+													)}
+													color="#0B69D4"
+													y={(segment: WorkoutExerciseSet) =>
+														segment.load /
+														workouts.reduce(
+															(maxLoad, { WorkoutExerciseSets }) => {
+																const totalLoad = WorkoutExerciseSets.reduce(
+																	(total, set) => total + set.load,
+																	0,
+																);
+
+																return Math.max(maxLoad, totalLoad);
+															},
+															0,
+														) +
+														workoutMetadata.maxSets -
+														0.5
+													}
+													x="day"
+												>
+													<VictoryScatter />
+													<VictoryLine />
+												</VictoryGroup>
+												<VictoryGroup
+													data={workouts.map(
+														({ workout, WorkoutExerciseSets }) => ({
+															day: format(new Date(workout.startTime), "d"),
+															reps: WorkoutExerciseSets.reduce(
+																(total, set) => total + set.reps,
+																0,
+															),
+														}),
+													)}
+													color="#C43343"
+													x="day"
+													y={(segment: WorkoutExerciseSet) =>
+														segment.reps /
+														workouts.reduce(
+															(maxReps, { WorkoutExerciseSets }) => {
+																const totalReps = WorkoutExerciseSets.reduce(
+																	(total, set) => total + set.reps,
+																	0,
+																);
+
+																return Math.max(maxReps, totalReps);
+															},
+															0,
+														) +
+														workoutMetadata.maxSets -
+														0.5
+													}
+												>
+													<VictoryScatter />
+													<VictoryLine
+														style={{
+															data: { strokeDasharray: "15, 5" },
+														}}
+													/>
+												</VictoryGroup>
+											</VictoryChart>
+											<VictoryGroup
+												offset={(1 / workouts.length) * 100}
+												style={{ labels: { fill: "white" } }}
+											>
+												<VictoryStack colorScale="cool">
+													{Array.from({ length: workoutMetadata.maxSets }).map(
+														(_, set) => (
+															<VictoryBar
+																data={workouts.map(
+																	({ workout, WorkoutExerciseSets }) => ({
+																		day: format(
+																			new Date(workout.startTime),
+																			"d",
+																		),
+																		load: WorkoutExerciseSets[set]?.load,
+																	}),
+																)}
+																x="day"
+																y={(segment) =>
+																	segment.load /
+																	workouts.reduce(
+																		(max, workout) =>
+																			Math.max(
+																				max,
+																				workout.WorkoutExerciseSets[set]?.load,
+																			),
+																		0,
+																	)
+																}
+																labels={({
+																	datum,
+																}: {
+																	datum: WorkoutExerciseSet;
+																}) => datum.load}
+																labelComponent={<VictoryLabel dy={16} />}
+															/>
+														),
+													)}
+												</VictoryStack>
+												<VictoryStack colorScale="warm">
+													{Array.from({ length: workoutMetadata.maxSets }).map(
+														(_, set) => (
+															<VictoryBar
+																data={workouts.map(
+																	({ workout, WorkoutExerciseSets }) => ({
+																		day: format(
+																			new Date(workout.startTime),
+																			"d",
+																		),
+																		reps: WorkoutExerciseSets[set]?.reps,
+																	}),
+																)}
+																x="day"
+																y={(segment) =>
+																	segment.reps /
+																	workouts.reduce(
+																		(max, workout) =>
+																			Math.max(
+																				max,
+																				workout.WorkoutExerciseSets[set]?.reps,
+																			),
+																		0,
+																	)
+																}
+																labels={({
+																	datum,
+																}: {
+																	datum: WorkoutExerciseSet;
+																}) => datum.reps}
+																labelComponent={<VictoryLabel dy={16} />}
+															/>
+														),
+													)}
+												</VictoryStack>
+											</VictoryGroup>
+										</VictoryStack>
 									</VictoryChart>
-									<VictoryGroup
-										offset={32}
-										style={{ labels: { fill: "white" } }}
-									>
-										<VictoryStack colorScale="cool">
-											<VictoryBar
-												data={[
-													{ day: "3", load: 30 },
-													{ day: "4", load: 40 },
-													{ day: "5", load: 40 },
-												]}
-												x="day"
-												y={(segment) => segment.load / 40}
-												labels={({ datum }) => datum.load}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", load: 35 },
-													{ day: "4", load: 35 },
-													{ day: "5", load: 40 },
-												]}
-												x="day"
-												y={(segment) => segment.load / 40}
-												labels={({ datum }) => datum.load}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", load: 35 },
-													{ day: "4", load: 35 },
-													{ day: "5", load: 40 },
-												]}
-												x="day"
-												y={(segment) => segment.load / 40}
-												labels={({ datum }) => datum.load}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-										</VictoryStack>
-										<VictoryStack colorScale="warm">
-											<VictoryBar
-												data={[
-													{ day: "3", reps: 10 },
-													{ day: "4", reps: 8 },
-													{ day: "5", reps: 8 },
-												]}
-												x="day"
-												y={(segment) => segment.reps / 12}
-												labels={({ datum }) => datum.reps}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", reps: 10 },
-													{ day: "4", reps: 10 },
-													{ day: "5", reps: 12 },
-												]}
-												x="day"
-												y={(segment) => segment.reps / 12}
-												labels={({ datum }) => datum.reps}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-											<VictoryBar
-												data={[
-													{ day: "3", reps: 10 },
-													{ day: "4", reps: 10 },
-													{ day: "5", reps: 12 },
-												]}
-												x="day"
-												y={(segment) => segment.reps / 12}
-												labels={({ datum }) => datum.reps}
-												labelComponent={<VictoryLabel dy={20} />}
-											/>
-										</VictoryStack>
-									</VictoryGroup>
-								</VictoryStack>
-							</VictoryChart>
-							<div class="flex justify-evenly w-full">
-								<div class="flex items-center gap-1">
-									<div class="rounded-full w-4 aspect-square bg-[#0B69D4]" />
-									<p>Carga</p>
+									<div class="flex justify-evenly w-full">
+										<div class="flex items-center gap-1">
+											<div class="rounded-full w-4 aspect-square bg-[#0B69D4]" />
+											<p>Carga</p>
+										</div>
+										<div class="flex items-center gap-1">
+											<div class="rounded-full w-4 aspect-square bg-[#C43343]" />
+											<p>Repetições</p>
+										</div>
+									</div>
 								</div>
-								<div class="flex items-center gap-1">
-									<div class="rounded-full w-4 aspect-square bg-[#C43343]" />
-									<p>Repetições</p>
-								</div>
-							</div>
-						</div>
+							);
+						})}
 					</div>
 				</TabsContent>
 			</Tabs>
 		</Page>
 	);
+
+	async function fetchUserExercises() {
+		const { data: exercises } = await api.get<Exercise[]>(
+			`/user/${id}/exercise`,
+		);
+
+		return exercises;
+	}
 
 	async function createRoutine({ name }: RoutineFormSchema) {
 		const { data: routine } = await api.post("/routine", {
