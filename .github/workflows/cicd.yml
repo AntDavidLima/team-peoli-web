@@ -10,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm run install
       - name: Build application
         run: npm run build
       - name: Prepare server for new files
