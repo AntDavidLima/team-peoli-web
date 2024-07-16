@@ -12,9 +12,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Copy files to the right path
         run: rsync --remove-source-files -r ./ /home/admin/web
-      : # - name: Build docker and run image
-      : #  working-directory: /home/admin/web
-      : #  run: docker compose up -d
-      : # - name: Clean up
-      : #   working-directory: /home/admin/web
-      : #   run: ls | grep -xvE ".env" | xargs rm -r
+      # - name: Build docker and run image
+      #   working-directory: /home/admin/web
+      #   run: docker compose up -d
+      # - name: Clean up
+      #   working-directory: /home/admin/web
+      #   run: ls | grep -xvE ".env" | xargs rm -r
