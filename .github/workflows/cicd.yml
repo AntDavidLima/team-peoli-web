@@ -6,12 +6,34 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-      - name: Copy files to the right path
-        run: rsync --remove-source-files -r ./ /home/admin/web
+      - name: Build application
+        run: npm run build
+      - name: Prepare server for new files
+        env:
+          PRIVATE_KEY: ${{ secrets.KEY }}
+          HOSTNAME: ${{secrets.HOST}}
+          USER_NAME: ${{secrets.USERNAME}}
+        run: |
+          echo "$PRIVATE_KEY" > key
+          && chmod 400 key
+          && ssh -i key ${USER_NAME}@${HOSTNAME}
+          && rm -r /home/admin/web
+          && mkdir /home/admin/web
+      - name: Copy builded files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          port: ${{ secrets.PORT }}
+          key: ${{ secrets.KEY }}
+          source: "dist"
+          target: /home/admin/web
+      # - name: Copy files to the right path
+      #   run: rsync --remove-source-files -r ./ /home/admin/web
       # - name: Build docker and run image
       #   working-directory: /home/admin/web
       #   run: docker compose up -d
