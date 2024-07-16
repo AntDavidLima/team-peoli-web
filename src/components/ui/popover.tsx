@@ -8,8 +8,8 @@ const Popover = PopoverPrimitive.Root;
 const PopoverTrigger = PopoverPrimitive.Trigger;
 
 const PopoverContent = React.forwardRef<
-	React.ElementRef<typeof PopoverPrimitive.Content>,
-	React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+	HTMLDivElement,
+	PopoverPrimitive.PopperContentProps
 >(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
 	<PopoverPrimitive.Portal>
 		<PopoverPrimitive.Content

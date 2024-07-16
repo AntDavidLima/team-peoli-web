@@ -1,0 +1,10 @@
+.git
+dist
+node_modules
+.dockerignore
+.env.example
+.gitignore
+biome.json
+docker-compose.yml
+Dockerfile
+components.json

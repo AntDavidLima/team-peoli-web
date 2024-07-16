@@ -1,0 +1,7 @@
+services:
+  team-peoli:
+    container_name: "team-peoli-web"
+    build: .
+    ports:
+      - "8080:80"
+    restart: on-failure

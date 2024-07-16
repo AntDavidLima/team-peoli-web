@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 const ToastProvider = ToastPrimitives.Provider;
 
 const ToastViewport = React.forwardRef<
-	React.ElementRef<typeof ToastPrimitives.Viewport>,
-	React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
+	HTMLOListElement,
+	ToastPrimitives.ToastViewportProps
 >(({ className, ...props }, ref) => (
 	<ToastPrimitives.Viewport
 		ref={ref}
@@ -40,9 +40,8 @@ const toastVariants = cva(
 );
 
 const Toast = React.forwardRef<
-	React.ReactElement<typeof ToastPrimitives.Root>,
-	React.ComponentProps<typeof ToastPrimitives.Root> &
-	VariantProps<typeof toastVariants>
+	HTMLLIElement,
+	ToastPrimitives.ToastProps & VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
 	return (
 		<ToastPrimitives.Root
@@ -55,8 +54,8 @@ const Toast = React.forwardRef<
 Toast.displayName = ToastPrimitives.Root.displayName;
 
 const ToastAction = React.forwardRef<
-	React.ElementRef<typeof ToastPrimitives.Action>,
-	React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
+	HTMLButtonElement,
+	ToastPrimitives.ToastActionProps
 >(({ className, ...props }, ref) => (
 	<ToastPrimitives.Action
 		ref={ref}
@@ -70,8 +69,8 @@ const ToastAction = React.forwardRef<
 ToastAction.displayName = ToastPrimitives.Action.displayName;
 
 const ToastClose = React.forwardRef<
-	React.ElementRef<typeof ToastPrimitives.Close>,
-	React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
+	HTMLButtonElement,
+	ToastPrimitives.ToastCloseProps
 >(({ className, ...props }, ref) => (
 	<ToastPrimitives.Close
 		ref={ref}
@@ -88,8 +87,8 @@ const ToastClose = React.forwardRef<
 ToastClose.displayName = ToastPrimitives.Close.displayName;
 
 const ToastTitle = React.forwardRef<
-	React.ElementRef<typeof ToastPrimitives.Title>,
-	React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
+	HTMLDivElement,
+	ToastPrimitives.ToastTitleProps
 >(({ className, ...props }, ref) => (
 	<ToastPrimitives.Title
 		ref={ref}
@@ -100,8 +99,8 @@ const ToastTitle = React.forwardRef<
 ToastTitle.displayName = ToastPrimitives.Title.displayName;
 
 const ToastDescription = React.forwardRef<
-	React.ElementRef<typeof ToastPrimitives.Description>,
-	React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
+	HTMLDivElement,
+	ToastPrimitives.ToastDescriptionProps
 >(({ className, ...props }, ref) => (
 	<ToastPrimitives.Description
 		ref={ref}
