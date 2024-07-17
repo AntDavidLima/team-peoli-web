@@ -4,6 +4,9 @@ on:
   push:
     branches: ["main"]
 
+env:
+  VITE_API_URL: http://api.teampeoli.com
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -11,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: npm install
+        run: VITE_API_URL=${{ env.VITE_API_URL }} npm install
       - name: Build application
         run: npm run build
       - name: Prepare server for new files
