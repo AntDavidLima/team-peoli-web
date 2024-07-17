@@ -14,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
-        run: VITE_API_URL=${{ env.VITE_API_URL }} npm install
+        run: npm install
       - name: Build application
-        run: npm run build
+        run: VITE_API_URL=${{ env.VITE_API_URL }} npm run build
       - name: Prepare server for new files
         uses: appleboy/ssh-action@v1.0.3
         with:
