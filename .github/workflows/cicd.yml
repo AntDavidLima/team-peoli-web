@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 env:
-  VITE_API_URL: http://api.teampeoli.com
+  VITE_API_URL: https://api.teampeoli.com
 
 jobs:
   build:
