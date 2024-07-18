@@ -268,7 +268,7 @@ function StudentsList() {
 						<SheetTrigger asChild>
 							<Button>Cadastrar aluno</Button>
 						</SheetTrigger>
-						<SheetContent>
+						<SheetContent className="overflow-y-auto">
 							<SheetHeader className="mb-4">
 								<SheetTitle>
 									{edittingStudentId.value ? "Editar aluno" : "Cadastrar aluno"}
