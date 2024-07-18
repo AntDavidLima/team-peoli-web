@@ -518,7 +518,7 @@ function Exercise() {
 						<SheetTrigger asChild>
 							<Button>Criar exercício</Button>
 						</SheetTrigger>
-						<SheetContent>
+						<SheetContent className="overflow-y-auto">
 							<SheetHeader className="mb-4">
 								<SheetTitle>
 									{edittingExerciseId.value
@@ -687,7 +687,10 @@ function Exercise() {
 											<FormItem>
 												<FormLabel>Instruções</FormLabel>
 												<FormControl>
-													<RichTextEditor {...field} />
+													<RichTextEditor
+														{...field}
+														editorClassName="max-h-[25vh]"
+													/>
 												</FormControl>
 												<FormMessage />
 												<FormDescription>
