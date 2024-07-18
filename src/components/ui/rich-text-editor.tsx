@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { Editor, EditorProps } from "react-draft-wysiwyg";
 import { ControllerRenderProps } from "react-hook-form";
 
@@ -5,6 +6,7 @@ export function RichTextEditor({
 	onChange,
 	value,
 	ref,
+	editorClassName,
 	...props
 }: ControllerRenderProps &
 	Omit<EditorProps, "editorState" | "onEditorStateChange" | "editorRef">) {
@@ -81,7 +83,10 @@ export function RichTextEditor({
 			}}
 			wrapperClassName="border border-muted rounded focus-within:ring-2 focus-within:ring-ring"
 			toolbarClassName="bg-background border-none m-0 rounded"
-			editorClassName="border-t-2 border-t-muted overflow-srroll max-h-[35vh] px-2 bg-background rounded-b"
+			editorClassName={cn(
+				"border-t-2 border-t-muted overflow-srroll px-2 bg-background rounded-b",
+				editorClassName,
+			)}
 			{...props}
 		/>
 	);
