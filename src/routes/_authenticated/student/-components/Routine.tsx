@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Save, Trash2 } from "lucide-react";
+import { Save, Trash2, X } from "lucide-react";
 import {
 	Popover,
 	PopoverContent,
@@ -467,13 +467,13 @@ export function Routine({
 								{form
 									.getValues(`trainings.${index}.exercises`)
 									?.map((_exercise, exerciseIndex) => (
-										<div class="border border-white rounded p-4 border-dashed space-y-6">
-											<div class="grid grid-cols-5 gap-2">
+										<div class="border border-white rounded p-4 border-dashed space-y-6 relative">
+											<div class="grid grid-cols-11 gap-2">
 												<FormField
 													control={form.control}
 													name={`trainings.${index}.exercises.${exerciseIndex}.exerciseId`}
 													render={({ field: { value } }) => (
-														<FormItem className="col-span-2">
+														<FormItem className="col-span-4">
 															<FormLabel>Exercício</FormLabel>
 															<Popover>
 																<FormControl>
@@ -538,7 +538,7 @@ export function Routine({
 													control={form.control}
 													name={`trainings.${index}.exercises.${exerciseIndex}.sets`}
 													render={({ field }) => (
-														<FormItem>
+														<FormItem className="col-span-2">
 															<FormLabel>Séries</FormLabel>
 															<FormControl>
 																<Input
@@ -555,7 +555,7 @@ export function Routine({
 													control={form.control}
 													name={`trainings.${index}.exercises.${exerciseIndex}.reps`}
 													render={({ field }) => (
-														<FormItem>
+														<FormItem className="col-span-3">
 															<FormLabel>Repetições</FormLabel>
 															<FormControl>
 																<Input placeholder="10 - 12" {...field} />
@@ -568,7 +568,7 @@ export function Routine({
 													control={form.control}
 													name={`trainings.${index}.exercises.${exerciseIndex}.restTime`}
 													render={({ field }) => (
-														<FormItem>
+														<FormItem className="col-span-2">
 															<FormLabel>Tempo de descanço</FormLabel>
 															<FormControl>
 																<Input
@@ -582,6 +582,23 @@ export function Routine({
 													)}
 												/>
 											</div>
+											<Button
+												size="icon"
+												variant="secondary"
+												className="absolute -right-4 -top-10 bg-background rounded-full hover:bg-destructive"
+												type="button"
+												onClick={() => {
+													form.setValue(
+														`trainings.${index}.exercises`,
+														form
+															.getValues(`trainings.${index}.exercises`)
+															?.filter((_, i) => i !== exerciseIndex),
+														{ shouldDirty: true },
+													);
+												}}
+											>
+												<X size={16} />
+											</Button>
 											<FormField
 												control={form.control}
 												name={`trainings.${index}.exercises.${exerciseIndex}.orientations`}
