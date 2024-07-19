@@ -172,6 +172,7 @@ function StudentDetails() {
 									endDate={routine.endDate}
 									orientations={routine.orientations}
 									trainings={routine.trainings}
+									studentId={id}
 								/>
 							))}
 							<div class="bg-card rounded p-6">

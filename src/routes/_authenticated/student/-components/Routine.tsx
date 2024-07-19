@@ -38,6 +38,17 @@ import { RawDraftContentState } from "react-draft-wysiwyg";
 import { AxiosError } from "axios";
 import { toast } from "@/components/ui/use-toast";
 import * as yup from "yup";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { signal } from "@preact/signals";
 
 export interface RoutineProps {
 	name: string;
@@ -46,6 +57,7 @@ export interface RoutineProps {
 	endDate: Date | null;
 	orientations: RawDraftContentState | null;
 	trainings: Trainings[];
+	studentId: string;
 }
 
 interface Trainings {
@@ -103,6 +115,8 @@ const routineFormSchema = yup.object({
 
 type RoutineFormSchema = yup.InferType<typeof routineFormSchema>;
 
+const isDeleteRoutineDialogOpen = signal(false);
+
 export function Routine({
 	name,
 	id,
@@ -110,6 +124,7 @@ export function Routine({
 	orientations,
 	endDate,
 	startDate,
+	studentId,
 }: RoutineProps) {
 	const trainingsByDayMap = Object.fromEntries(
 		trainings.map((training) => [
@@ -166,7 +181,9 @@ export function Routine({
 	const { mutate: updateRoutine } = useMutation({
 		mutationFn: patchRoutine,
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["student", id, "routines"] });
+			queryClient.invalidateQueries({
+				queryKey: ["student", studentId, "routines"],
+			});
 			toast({
 				title: "Rotina atualizada com sucesso",
 				variant: "success",
@@ -187,6 +204,41 @@ export function Routine({
 					toast({
 						title:
 							"Não foi possivel atualizar a rotina pelos seguintes motivos:",
+						description: apiError.error.details.map(
+							(detail) => `• ${detail.message}`,
+						),
+						variant: "destructive",
+					});
+				}
+			}
+		},
+	});
+
+	const { mutate: deleteRoutine } = useMutation({
+		mutationFn: destroyRoutine,
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: ["student", studentId, "routines"],
+			});
+			toast({
+				title: "Rotina deletada com sucesso",
+				variant: "success",
+			});
+		},
+		onError: (error) => {
+			if (error instanceof AxiosError) {
+				const apiError = error.response?.data as APIError;
+
+				if (typeof apiError.error === "string") {
+					toast({
+						title: apiError.message,
+						variant: "destructive",
+					});
+				}
+
+				if (typeof apiError.error === "object") {
+					toast({
+						title: "Não foi possivel deletar a rotina pelos seguintes motivos:",
 						description: apiError.error.details.map(
 							(detail) => `• ${detail.message}`,
 						),
@@ -249,12 +301,43 @@ export function Routine({
 								<FormControl>
 									<div class="flex items-center gap-2">
 										<Input placeholder="Nome da rotina de treinos" {...field} />
-										<Button size="icon" variant="ghost" type="button">
+										<Button
+											size="icon"
+											variant="ghost"
+											type="button"
+											onClick={handleDeleteButtonClick}
+										>
 											<Trash2 size={16} />
 										</Button>
 										<Button size="icon" variant="ghost">
 											<Save size={16} />
 										</Button>
+										<AlertDialog
+											open={isDeleteRoutineDialogOpen.value}
+											onOpenChange={() =>
+												(isDeleteRoutineDialogOpen.value = false)
+											}
+										>
+											<AlertDialogContent>
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														Deletar grupo muscular
+													</AlertDialogTitle>
+													<AlertDialogDescription>
+														Tem certeza que deseja apagar este grupo muscular?
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>Cancelar</AlertDialogCancel>
+													<AlertDialogAction
+														className="bg-destructive hover:bg-destructive/80"
+														onClick={() => deleteRoutine()}
+													>
+														Deletar
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
 									</div>
 								</FormControl>
 								<FormMessage />
@@ -580,6 +663,14 @@ export function Routine({
 			await api.get<[number, Exercise[]]>("/exercise");
 
 		return exercises;
+	}
+
+	async function destroyRoutine() {
+		await api.delete(`/routine/${id}`);
+	}
+
+	function handleDeleteButtonClick() {
+		isDeleteRoutineDialogOpen.value = true;
 	}
 
 	function mergeSetsByMuscleGroup(
