@@ -295,7 +295,7 @@ export function Routine({
 				],
 				{ shouldDirty: true },
 			);
-		}, 500);
+		}, 1000);
 	}, []);
 
 	return (
