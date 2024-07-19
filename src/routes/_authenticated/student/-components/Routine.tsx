@@ -419,7 +419,7 @@ export function Routine({
 																		<CommandGroup>
 																			{exercises?.map((exercise) => (
 																				<CommandItem
-																					value={exercise.id.toString()}
+																					value={exercise.name}
 																					key={exercise.id}
 																					onSelect={() => {
 																						form.setValue(
