@@ -47,8 +47,6 @@
   "devDependencies": {
     "@biomejs/biome": "^1.6.4",
     "@preact/preset-vite": "^2.8.2",
-    "@tanstack/react-query-devtools": "^5.37.1",
-    "@tanstack/router-devtools": "^1.26.7",
     "@tanstack/router-vite-plugin": "^1.26.6",
     "@types/draft-js": "^0.11.18",
     "@types/lodash": "^4.17.4",
