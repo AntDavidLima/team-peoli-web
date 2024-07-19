@@ -156,15 +156,6 @@ export function Routine({
 				? EditorState.createWithContent(convertFromRaw(orientations))
 				: EditorState.createEmpty(),
 			name,
-			trainings: [
-				{ ...trainingsByDayMap.SUNDAY, day: "SUNDAY" },
-				{ ...trainingsByDayMap.MONDAY, day: "MONDAY" },
-				{ ...trainingsByDayMap.TUESDAY, day: "TUESDAY" },
-				{ ...trainingsByDayMap.WEDNESDAY, day: "WEDNESDAY" },
-				{ ...trainingsByDayMap.THURSDAY, day: "THURSDAY" },
-				{ ...trainingsByDayMap.FRIDAY, day: "FRIDAY" },
-				{ ...trainingsByDayMap.SATURDAY, day: "SATURDAY" },
-			],
 		},
 	});
 
@@ -288,6 +279,24 @@ export function Routine({
 			{},
 		);
 	}, [JSON.stringify(form.watch("trainings"))]);
+
+	useEffect(() => {
+		setTimeout(() => {
+			form.setValue(
+				"trainings",
+				[
+					{ ...trainingsByDayMap.SUNDAY, day: "SUNDAY" },
+					{ ...trainingsByDayMap.MONDAY, day: "MONDAY" },
+					{ ...trainingsByDayMap.TUESDAY, day: "TUESDAY" },
+					{ ...trainingsByDayMap.WEDNESDAY, day: "WEDNESDAY" },
+					{ ...trainingsByDayMap.THURSDAY, day: "THURSDAY" },
+					{ ...trainingsByDayMap.FRIDAY, day: "FRIDAY" },
+					{ ...trainingsByDayMap.SATURDAY, day: "SATURDAY" },
+				],
+				{ shouldDirty: true },
+			);
+		}, 500);
+	}, []);
 
 	return (
 		<div class="bg-card rounded p-6">
