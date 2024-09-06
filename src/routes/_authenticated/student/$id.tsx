@@ -518,6 +518,7 @@ function StudentDetails() {
 		const { data: routines } = await api.get<RoutineProps[]>(`/routine`, {
 			params: {
 				userId,
+				listEmpty: true,
 			},
 		});
 
