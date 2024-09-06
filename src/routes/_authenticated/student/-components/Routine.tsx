@@ -95,7 +95,7 @@ const routineFormSchema = yup.object({
 			name: yup
 				.string()
 				.when("exercises", (exercises) =>
-					exercises[0].length > 0
+					exercises[0]?.length > 0
 						? yup.string().required("Campo obrigatório")
 						: yup.string(),
 				),
