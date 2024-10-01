@@ -1,6 +1,10 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
-import { Day, TotalSetsByMuscleGroup, totalSetsByMuscleGroup } from "../$id";
+import {
+	Day,
+	TotalSetsByMuscleGroup,
+	totalSetsByMuscleGroupByRoutine,
+} from "../$id";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
@@ -241,43 +245,49 @@ export function Routine({
 	});
 
 	useEffect(() => {
-		totalSetsByMuscleGroup.value = (form.watch("trainings") || []).reduce(
-			(setsByMuscleGroupOnTrainig, training) => {
-				const totalSetsByMuscleGroupOnExercise = (
-					training.exercises || []
-				).reduce((setsByMuscleGroupOnExercise, exercise) => {
-					const apiExercise = exercises?.find(
-						(apiExercise) => apiExercise.id === exercise.exerciseId,
-					);
+		totalSetsByMuscleGroupByRoutine.value = {
+			...totalSetsByMuscleGroupByRoutine.value,
+			[id]: (form.watch("trainings") || []).reduce(
+				(setsByMuscleGroupOnTrainig, training) => {
+					const totalSetsByMuscleGroupOnExercise = (
+						training.exercises || []
+					).reduce((setsByMuscleGroupOnExercise, exercise) => {
+						const apiExercise = exercises?.find(
+							(apiExercise) => apiExercise.id === exercise.exerciseId,
+						);
 
-					const totalSetsByMuscleGroupOnExercisedMuscleGroups = (
-						apiExercise?.muscleGroups || []
-					).reduce(
-						(setsByMuscleGroupOnExercisedMuscleGroup, exercisedMuscleGroup) => {
-							return mergeSetsByMuscleGroup(
+						const totalSetsByMuscleGroupOnExercisedMuscleGroups = (
+							apiExercise?.muscleGroups || []
+						).reduce(
+							(
 								setsByMuscleGroupOnExercisedMuscleGroup,
-								{
-									[exercisedMuscleGroup.muscleGroup.id]:
-										exercise.sets * exercisedMuscleGroup.weight,
-								},
-							);
-						},
-						{},
-					);
+								exercisedMuscleGroup,
+							) => {
+								return mergeSetsByMuscleGroup(
+									setsByMuscleGroupOnExercisedMuscleGroup,
+									{
+										[exercisedMuscleGroup.muscleGroup.id]:
+											exercise.sets * exercisedMuscleGroup.weight,
+									},
+								);
+							},
+							{},
+						);
+
+						return mergeSetsByMuscleGroup(
+							setsByMuscleGroupOnExercise,
+							totalSetsByMuscleGroupOnExercisedMuscleGroups,
+						);
+					}, {});
 
 					return mergeSetsByMuscleGroup(
-						setsByMuscleGroupOnExercise,
-						totalSetsByMuscleGroupOnExercisedMuscleGroups,
+						setsByMuscleGroupOnTrainig,
+						totalSetsByMuscleGroupOnExercise,
 					);
-				}, {});
-
-				return mergeSetsByMuscleGroup(
-					setsByMuscleGroupOnTrainig,
-					totalSetsByMuscleGroupOnExercise,
-				);
-			},
-			{},
-		);
+				},
+				{},
+			),
+		};
 	}, [JSON.stringify(form.watch("trainings"))]);
 
 	useEffect(() => {
@@ -698,22 +708,22 @@ export function Routine({
 	function handleDeleteButtonClick() {
 		isDeleteRoutineDialogOpen.value = true;
 	}
+}
 
-	function mergeSetsByMuscleGroup(
-		total: TotalSetsByMuscleGroup,
-		current: TotalSetsByMuscleGroup,
-	) {
-		return Object.entries(current).reduce(
-			(accumulatedSetsByMuscleGroup, muscleGroup) => {
-				const [muscleGroupId, sets] = muscleGroup;
+export function mergeSetsByMuscleGroup(
+	total: TotalSetsByMuscleGroup,
+	current: TotalSetsByMuscleGroup,
+) {
+	return Object.entries(current).reduce(
+		(accumulatedSetsByMuscleGroup, muscleGroup) => {
+			const [muscleGroupId, sets] = muscleGroup;
 
-				return {
-					...accumulatedSetsByMuscleGroup,
-					[muscleGroupId]:
-						(accumulatedSetsByMuscleGroup[Number(muscleGroupId)] || 0) + sets,
-				};
-			},
-			total,
-		);
-	}
+			return {
+				...accumulatedSetsByMuscleGroup,
+				[muscleGroupId]:
+					(accumulatedSetsByMuscleGroup[Number(muscleGroupId)] || 0) + sets,
+			};
+		},
+		total,
+	);
 }

@@ -39,7 +39,11 @@ import {
 	VictoryScatter,
 	VictoryStack,
 } from "victory";
-import { Routine, RoutineProps } from "./-components/Routine";
+import {
+	Routine,
+	RoutineProps,
+	mergeSetsByMuscleGroup,
+} from "./-components/Routine";
 
 export enum Day {
 	SUNDAY = "D",
@@ -63,7 +67,10 @@ type RoutineFormSchema = yup.InferType<typeof routineFormSchema>;
 
 export type TotalSetsByMuscleGroup = Record<number, number>;
 
-export const totalSetsByMuscleGroup = signal<TotalSetsByMuscleGroup>({});
+type TotalSetsByMuscleGroupByRoutine = Record<number, TotalSetsByMuscleGroup>;
+
+export const totalSetsByMuscleGroupByRoutine =
+	signal<TotalSetsByMuscleGroupByRoutine>({});
 
 interface Exercise {
 	id: number;
@@ -149,17 +156,22 @@ function StudentDetails() {
 						<div>
 							<div class="bg-card rounded p-2 w-60 sticky left-0 -top-10">
 								<p class="font-bold">Séries por grupo muscular</p>
-								{Object.entries(totalSetsByMuscleGroup.value).length === 0 && (
-									<p class="text-muted mt-1">Nenhum treino cadastrado</p>
-								)}
-								{Object.entries(totalSetsByMuscleGroup.value).map(
-									([muscleGroupId, sets]) => (
-										<div class="flex justify-between">
-											<p>{muscleGroupsByIdMap[muscleGroupId]}</p>
-											<p>{sets}</p>
-										</div>
+								{Object.entries(totalSetsByMuscleGroupByRoutine.value)
+									.length === 0 && (
+										<p class="text-muted mt-1">Nenhum treino cadastrado</p>
+									)}
+								{Object.entries(
+									Object.values(totalSetsByMuscleGroupByRoutine.value).reduce(
+										(totalSetsByMuscleGroup, sets) =>
+											mergeSetsByMuscleGroup(totalSetsByMuscleGroup, sets),
+										{},
 									),
-								)}
+								).map(([muscleGroupId, sets]) => (
+									<div class="flex justify-between">
+										<p>{muscleGroupsByIdMap[muscleGroupId]}</p>
+										<p>{sets}</p>
+									</div>
+								))}
 							</div>
 						</div>
 						<div class="space-y-4 w-full">
