@@ -115,7 +115,10 @@ const isCreationFormOpen = signal(false);
 const createExerciseFormSchema = yup.object({
 	name: yup.string().required("Campo obrigatório"),
 	instructions: yup.mixed<EditorState>().required(),
-	restTime: yup.number().typeError("Tempo de descanso inválido"),
+	restTime: yup
+		.number()
+		.typeError("Tempo de descanso inválido")
+		.required("Campo obrigatório"),
 	muscleGroups: yup
 		.array(
 			yup.object({
