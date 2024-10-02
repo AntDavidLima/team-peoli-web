@@ -732,7 +732,9 @@ function Exercise() {
 							</SelectContent>
 						</Select>
 					</div>
-					<p>1-10 de 10</p>
+					<p>
+						{page}-{page * rows} de {totalExercises}
+					</p>
 					<div class="flex items-center">
 						<Button
 							variant="ghost"

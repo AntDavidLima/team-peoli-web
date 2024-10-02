@@ -32,6 +32,7 @@ export function DataGrid<T>({
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
+		manualPagination: true,
 	});
 
 	return (

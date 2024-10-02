@@ -373,7 +373,9 @@ function StudentsList() {
 							</SelectContent>
 						</Select>
 					</div>
-					<p>1-10 de 10</p>
+					<p>
+						{page}-{page * rows} de {totalStudents}
+					</p>
 					<div class="flex items-center">
 						<Button
 							variant="ghost"
