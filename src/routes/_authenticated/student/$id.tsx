@@ -17,7 +17,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { signal } from "@preact/signals";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, subMonths } from "date-fns";
@@ -39,11 +38,8 @@ import {
 	VictoryScatter,
 	VictoryStack,
 } from "victory";
-import {
-	Routine,
-	RoutineProps,
-	mergeSetsByMuscleGroup,
-} from "./-components/Routine";
+import { Routine, RoutineProps } from "./-components/Routine";
+import { SetsCalc } from "./-components/SetsCalc";
 
 export enum Day {
 	SUNDAY = "D",
@@ -64,13 +60,6 @@ export const routineFormSchema = yup.object({
 });
 
 type RoutineFormSchema = yup.InferType<typeof routineFormSchema>;
-
-export type TotalSetsByMuscleGroup = Record<number, number>;
-
-type TotalSetsByMuscleGroupByRoutine = Record<number, TotalSetsByMuscleGroup>;
-
-export const totalSetsByMuscleGroupByRoutine =
-	signal<TotalSetsByMuscleGroupByRoutine>({});
 
 interface Exercise {
 	id: number;
@@ -153,27 +142,7 @@ function StudentDetails() {
 				</TabsList>
 				<TabsContent value="trainings">
 					<div class="flex gap-4">
-						<div>
-							<div class="bg-card rounded p-2 w-60 sticky left-0 -top-10">
-								<p class="font-bold">Séries por grupo muscular</p>
-								{Object.entries(totalSetsByMuscleGroupByRoutine.value)
-									.length === 0 && (
-										<p class="text-muted mt-1">Nenhum treino cadastrado</p>
-									)}
-								{Object.entries(
-									Object.values(totalSetsByMuscleGroupByRoutine.value).reduce(
-										(totalSetsByMuscleGroup, sets) =>
-											mergeSetsByMuscleGroup(totalSetsByMuscleGroup, sets),
-										{},
-									),
-								).map(([muscleGroupId, sets]) => (
-									<div class="flex justify-between">
-										<p>{muscleGroupsByIdMap[muscleGroupId]}</p>
-										<p>{sets}</p>
-									</div>
-								))}
-							</div>
-						</div>
+						<SetsCalc muscleGroupsByIdMap={muscleGroupsByIdMap} />
 						<div class="space-y-4 w-full">
 							{routines?.map((routine) => (
 								<Routine

@@ -1,12 +1,10 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
 import {
-	Day,
 	TotalSetsByMuscleGroup,
 	totalSetsByMuscleGroupByRoutine,
-} from "../$id";
+} from "../-components/SetsCalc";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
 import {
 	Form,
 	FormControl,
@@ -52,7 +50,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { signal } from "@preact/signals";
+import { effect, signal } from "@preact/signals";
+import { Day } from "../$id";
 
 export interface RoutineProps {
 	name: string;
@@ -130,27 +129,6 @@ export function Routine({
 	startDate,
 	studentId,
 }: RoutineProps) {
-	const trainingsByDayMap = Object.fromEntries(
-		trainings.map((training) => [
-			training.day,
-			{
-				...training,
-				name: training.name || undefined,
-				exercises: training.exercises.map(
-					({ exercise, ...trainingExercise }) => ({
-						...trainingExercise,
-						exerciseId: exercise.id,
-						orientations: trainingExercise.orientations
-							? EditorState.createWithContent(
-								convertFromRaw(trainingExercise.orientations),
-							)
-							: EditorState.createEmpty(),
-					}),
-				),
-			},
-		]),
-	);
-
 	const form = useForm({
 		resolver: yupResolver(routineFormSchema),
 		defaultValues: {
@@ -160,6 +138,18 @@ export function Routine({
 				? EditorState.createWithContent(convertFromRaw(orientations))
 				: EditorState.createEmpty(),
 			name,
+			trainings: trainings.map(({ exercises, ...training }) => ({
+				...training,
+				exercises: exercises.map(
+					({ orientations, exercise: { id }, ...exercise }) => ({
+						...exercise,
+						exerciseId: id,
+						orientations: orientations
+							? EditorState.createWithContent(convertFromRaw(orientations))
+							: EditorState.createEmpty(),
+					}),
+				),
+			})),
 		},
 	});
 
@@ -244,9 +234,9 @@ export function Routine({
 		},
 	});
 
-	useEffect(() => {
+	effect(() => {
 		totalSetsByMuscleGroupByRoutine.value = {
-			...totalSetsByMuscleGroupByRoutine.value,
+			...totalSetsByMuscleGroupByRoutine.peek(),
 			[id]: (form.watch("trainings") || []).reduce(
 				(setsByMuscleGroupOnTrainig, training) => {
 					const totalSetsByMuscleGroupOnExercise = (
@@ -288,25 +278,7 @@ export function Routine({
 				{},
 			),
 		};
-	}, [JSON.stringify(form.watch("trainings"))]);
-
-	useEffect(() => {
-		setTimeout(() => {
-			form.setValue(
-				"trainings",
-				[
-					{ ...trainingsByDayMap.SUNDAY, day: "SUNDAY" },
-					{ ...trainingsByDayMap.MONDAY, day: "MONDAY" },
-					{ ...trainingsByDayMap.TUESDAY, day: "TUESDAY" },
-					{ ...trainingsByDayMap.WEDNESDAY, day: "WEDNESDAY" },
-					{ ...trainingsByDayMap.THURSDAY, day: "THURSDAY" },
-					{ ...trainingsByDayMap.FRIDAY, day: "FRIDAY" },
-					{ ...trainingsByDayMap.SATURDAY, day: "SATURDAY" },
-				],
-				{ shouldDirty: true },
-			);
-		}, 1000);
-	}, []);
+	});
 
 	return (
 		<div class="bg-card rounded p-6">
