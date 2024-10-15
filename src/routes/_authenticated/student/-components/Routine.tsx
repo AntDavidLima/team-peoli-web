@@ -98,7 +98,7 @@ const routineFormSchema = yup.object({
 			name: yup
 				.string()
 				.when("exercises", (exercises) =>
-					exercises[0]?.length > 0
+					exercises.at(0).length > 0
 						? yup.string().required("Campo obrigatório")
 						: yup.string(),
 				),
@@ -138,8 +138,9 @@ export function Routine({
 				? EditorState.createWithContent(convertFromRaw(orientations))
 				: EditorState.createEmpty(),
 			name,
-			trainings: trainings.map(({ exercises, ...training }) => ({
+			trainings: trainings.map(({ exercises, name, ...training }) => ({
 				...training,
+				name: name || "",
 				exercises: exercises.map(
 					({ orientations, exercise: { id }, ...exercise }) => ({
 						...exercise,
@@ -152,6 +153,8 @@ export function Routine({
 			})),
 		},
 	});
+
+	console.log("trainings", form.getValues("trainings.0.exercises"));
 
 	const queryClient = useQueryClient();
 
