@@ -154,8 +154,6 @@ export function Routine({
     },
   });
 
-  console.log(form.getFieldState("trainings").error);
-
   const queryClient = useQueryClient();
 
   const {
@@ -474,7 +472,7 @@ export function Routine({
                                   <PopoverTrigger asChild>
                                     <Button
                                       variant="outline"
-                                      className="w-full normal-case"
+                                      className="w-full normal-case overflow-hidden text-ellipsis block"
                                       role="combobox"
                                     >
                                       {value ? (
