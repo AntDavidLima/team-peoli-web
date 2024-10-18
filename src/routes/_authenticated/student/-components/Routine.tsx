@@ -107,7 +107,7 @@ const routineFormSchema = yup.object({
         yup.object({
           sets: yup.number().required("Campo obrigatório"),
           reps: yup.string().required("Campo obrigatório"),
-          exerciseId: yup.number().required("Campo obrigatório"),
+          exerciseId: yup.number().notOneOf([0], "Selecione um exercício"),
           orientations: yup.mixed<EditorState>().required("Campo obrigatório"),
           restTime: yup.number().required("Campo obrigatório"),
         }),
@@ -585,7 +585,6 @@ export function Routine({
                             form
                               .getValues(`trainings.${index}.exercises`)
                               ?.filter((_, i) => i !== exerciseIndex),
-                            { shouldDirty: true },
                           );
                         }}
                       >
@@ -613,21 +612,17 @@ export function Routine({
                   <Button
                     type="button"
                     onClick={() => {
-                      form.setValue(
-                        `trainings.${index}.exercises`,
-                        [
-                          ...(form.getValues(`trainings.${index}.exercises`) ||
-                            []),
-                          {
-                            exerciseId: 0,
-                            orientations: EditorState.createEmpty(),
-                            reps: "",
-                            restTime: 0,
-                            sets: 0,
-                          },
-                        ],
-                        { shouldDirty: true },
-                      );
+                      form.setValue(`trainings.${index}.exercises`, [
+                        ...(form.getValues(`trainings.${index}.exercises`) ||
+                          []),
+                        {
+                          exerciseId: 0,
+                          orientations: EditorState.createEmpty(),
+                          reps: "",
+                          restTime: 0,
+                          sets: 0,
+                        },
+                      ]);
                     }}
                   >
                     Adicionar exercício
