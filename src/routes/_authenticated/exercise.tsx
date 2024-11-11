@@ -129,7 +129,7 @@ const createExerciseFormSchema = yup.object({
 		)
 		.min(1, "Selecione ao menos um grupo")
 		.required(),
-	executionVideoUrl: yup.string().url("URL inválida"),
+	executionVideo: yup.mixed<Blob>(),
 });
 
 type CreateExerciseForm = yup.InferType<typeof createExerciseFormSchema>;
@@ -666,19 +666,20 @@ function Exercise() {
 									/>
 									<FormField
 										control={form.control}
-										name="executionVideoUrl"
-										render={({ field }) => (
+										name="executionVideo"
+										render={({ field: { value, onChange, ...field } }) => (
 											<FormItem>
-												<FormLabel>Link do vídeo de execução</FormLabel>
+												<FormLabel>Vídeo de execução</FormLabel>
 												<FormControl>
 													<Input
-														placeholder="https://www.youtube.com/watch?v=..."
+														type="file"
 														{...field}
+														onChange={event => onChange(event.currentTarget.files?.[0])}
 													/>
 												</FormControl>
 												<FormMessage />
 												<FormDescription>
-													Copie e cole o link completo do vídeo de execução
+													Faça o upload do vídeo de execução deste exercício
 												</FormDescription>
 											</FormItem>
 										)}
@@ -783,18 +784,18 @@ function Exercise() {
 		restTime,
 		instructions,
 		muscleGroups,
-		executionVideoUrl,
+		executionVideo,
 	}: CreateExerciseForm) {
 		const instructionsRawDraft = convertToRaw(instructions.getCurrentContent());
 
-		await api.post("/exercise", {
+		await api.postForm("/exercise", {
 			name,
 			restTime,
 			instructions: instructionsRawDraft,
 			muscleGroups: muscleGroups.map(
 				({ label, ...muscleGroup }) => muscleGroup,
 			),
-			executionVideoUrl,
+			executionVideo,
 		});
 	}
 
