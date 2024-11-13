@@ -149,7 +149,7 @@ const updateExerciseFormSchema = yup.object({
 		)
 		.min(1, "Selecione ao menos um grupo")
 		.required(),
-	executionVideoUrl: yup.string().url("URL inválida"),
+	executionVideo: yup.mixed<Blob>(),
 });
 
 type UpdateExerciseForm = yup.InferType<typeof updateExerciseFormSchema>;
@@ -282,12 +282,13 @@ function Exercise() {
 		placeholderData: keepPreviousData,
 	});
 
-	const { mutate: patchExercise } = useMutation({
+	const { mutate: patchExercise, isPending: updatingExercise } = useMutation({
 		mutationFn: updateExercise,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["exercises"] });
 			isCreationFormOpen.value = false;
 			form.reset();
+			videoUploadProgress.value = 0
 		},
 		onError: (error) => {
 			if (error instanceof AxiosError) {
@@ -679,7 +680,7 @@ function Exercise() {
 														onChange={event => onChange(event.currentTarget.files?.[0])}
 													/>
 												</FormControl>
-                                                {creatingExercise && (
+                                                {(creatingExercise || updatingExercise) && value && (
                                                     <Progress value={videoUploadProgress.value} className="h-2" />
                                                 )}
 												<FormMessage />
@@ -708,8 +709,8 @@ function Exercise() {
 											</FormItem>
 										)}
 									/>
-									<Button disabled={creatingExercise}>
-                                        {creatingExercise && <Loader2 className="animate-spin mr-1" />}
+									<Button disabled={creatingExercise || updatingExercise}>
+                                        {(creatingExercise || updatingExercise) && <Loader2 className="animate-spin mr-1" />}
 										{edittingExerciseId.value ? "Salvar" : "Criar"}
 									</Button>
 								</form>
@@ -797,7 +798,7 @@ function Exercise() {
 		await api.postForm("/exercise", {
 			name,
 			restTime,
-			instructions: instructionsRawDraft,
+			instructions: JSON.stringify(instructionsRawDraft),
 			muscleGroups: muscleGroups.map(
 				({ label, ...muscleGroup }) => muscleGroup,
 			),
@@ -814,18 +815,22 @@ function Exercise() {
 		name,
 		muscleGroups,
 		restTime,
-		executionVideoUrl,
+		executionVideo,
 	}: UpdateExerciseForm) {
 		const instructionsRawDraft = convertToRaw(instructions.getCurrentContent());
 
-		await api.patch(`/exercise/${edittingExerciseId.value}`, {
+		await api.patchForm(`/exercise/${edittingExerciseId.value}`, {
 			name,
 			restTime,
-			instructions: instructionsRawDraft,
+			instructions: JSON.stringify(instructionsRawDraft),
 			muscleGroups: muscleGroups.map(
 				({ label, ...muscleGroup }) => muscleGroup,
 			),
-			executionVideoUrl,
+			executionVideo,
+		}, {
+			onUploadProgress: ({ loaded, total }) => {
+				videoUploadProgress.value = Math.round((loaded * 100) / (total || 1))
+			}
 		});
 	}
 
