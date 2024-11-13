@@ -60,11 +60,12 @@ import {
 } from "draft-js";
 import "@/../node_modules/react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import {ChevronLeft, ChevronRight, Loader2, Pencil, Trash2} from "lucide-react";
 import { TargetedEvent } from "preact/compat";
 import _ from "lodash";
 import { AxiosError } from "axios";
 import { toast } from "@/components/ui/use-toast";
+import {Progress} from "@/components/ui/progress.tsx";
 
 interface SelectOption {
 	label: string;
@@ -77,6 +78,9 @@ const isDeleteMuscleGroupDialogOpen = signal(false);
 const isRenameMuscleGroupDialogOpen = signal(false);
 const isAddMuscleGroupDialogOpen = signal(false);
 const isUpdateMuscleGroupWeightDialogOpen = signal(false);
+const edittingExerciseId = signal<number | null>(null);
+const isCreationFormOpen = signal(false);
+const videoUploadProgress = signal(0);
 
 const exerciseSearchSchema = yup.object({
 	rows: yup.number().optional().default(10),
@@ -108,9 +112,6 @@ export interface MuscleGroup {
 	id: number;
 	name: string;
 }
-
-const edittingExerciseId = signal<number | null>(null);
-const isCreationFormOpen = signal(false);
 
 const createExerciseFormSchema = yup.object({
 	name: yup.string().required("Campo obrigatório"),
@@ -302,12 +303,13 @@ function Exercise() {
 		},
 	});
 
-	const { mutate: addExercise } = useMutation({
+	const { mutate: addExercise, isPending: creatingExercise } = useMutation({
 		mutationFn: createExercise,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["exercises"] });
 			isCreationFormOpen.value = false;
 			form.reset();
+			videoUploadProgress.value = 0
 		},
 	});
 
@@ -677,6 +679,9 @@ function Exercise() {
 														onChange={event => onChange(event.currentTarget.files?.[0])}
 													/>
 												</FormControl>
+                                                {creatingExercise && (
+                                                    <Progress value={videoUploadProgress.value} className="h-2" />
+                                                )}
 												<FormMessage />
 												<FormDescription>
 													Faça o upload do vídeo de execução deste exercício
@@ -703,7 +708,8 @@ function Exercise() {
 											</FormItem>
 										)}
 									/>
-									<Button>
+									<Button disabled={creatingExercise}>
+                                        {creatingExercise && <Loader2 className="animate-spin mr-1" />}
 										{edittingExerciseId.value ? "Salvar" : "Criar"}
 									</Button>
 								</form>
@@ -796,6 +802,10 @@ function Exercise() {
 				({ label, ...muscleGroup }) => muscleGroup,
 			),
 			executionVideo,
+		}, {
+			onUploadProgress: ({ loaded, total }) => {
+                videoUploadProgress.value = Math.round((loaded * 100) / (total || 1))
+			}
 		});
 	}
 
