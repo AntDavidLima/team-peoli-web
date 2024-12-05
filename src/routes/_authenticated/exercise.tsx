@@ -131,6 +131,7 @@ const createExerciseFormSchema = yup.object({
 		.min(1, "Selecione ao menos um grupo")
 		.required(),
 	executionVideo: yup.mixed<Blob>(),
+	executionVideoUrl: yup.string().optional(),
 });
 
 type CreateExerciseForm = yup.InferType<typeof createExerciseFormSchema>;
@@ -673,13 +674,22 @@ function Exercise() {
 										render={({ field: { value, onChange, ...field } }) => (
 											<FormItem>
 												<FormLabel>Vídeo de execução</FormLabel>
-												<FormControl>
-													<Input
-														type="file"
-														{...field}
-														onChange={event => onChange(event.currentTarget.files?.[0])}
-													/>
-												</FormControl>
+												{form.getValues("executionVideoUrl") && (
+													<div className="flex justify-center">
+														<video className="h-48 aspect-video bg-card rounded" controls>
+															<source src={form.getValues("executionVideoUrl")} />
+														</video>
+													</div>
+												)}
+												<div className="flex gap-2">
+													<FormControl>
+														<Input
+															type="file"
+															{...field}
+															onChange={event => onChange(event.currentTarget.files?.[0])}
+														/>
+													</FormControl>
+												</div>
                                                 {(creatingExercise || updatingExercise) && value && (
                                                     <Progress value={videoUploadProgress.value} className="h-2" />
                                                 )}
