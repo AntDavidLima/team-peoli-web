@@ -224,13 +224,13 @@ function StudentDetails() {
 					<svg style={{ height: 0 }}>
 						<defs>
 							<linearGradient
-								id="blue-to-red"
+								id="red-to-blue"
 								x1="0%"
 								x2="100%"
 								gradientUnits="userSpaceOnUse"
 							>
-								<stop offset="0%" stopColor="#0B69D4" />
-								<stop offset="100%" stopColor="#C43343" />
+								<stop offset="0%" stopColor="#C43343" />
+								<stop offset="100%" stopColor="#0B69D4" />
 							</linearGradient>
 						</defs>
 					</svg>
@@ -278,7 +278,7 @@ function StudentDetails() {
 											}
 											style={{
 												tickLabels: { fill: "white" },
-												axis: { stroke: "#0B69D4", strokeWidth: 4 },
+												axis: { stroke: "#C43343", strokeWidth: 4 },
 											}}
 										/>
 										<VictoryAxis
@@ -295,7 +295,7 @@ function StudentDetails() {
 												ticks: {
 													padding: -20,
 												},
-												axis: { stroke: "#C43343", strokeWidth: 4 },
+												axis: { stroke: "#0B69D4", strokeWidth: 4 },
 											}}
 										/>
 										<VictoryStack>
@@ -308,7 +308,7 @@ function StudentDetails() {
 														tickLabels: { fill: "white" },
 														axis: {
 															strokeWidth: 4,
-															stroke: "url(#blue-to-red)",
+															stroke: "url(#red-to-blue)",
 														},
 													}}
 												/>
@@ -322,7 +322,7 @@ function StudentDetails() {
 															),
 														}),
 													)}
-													color="#0B69D4"
+													color="#C43343"
 													y={(segment: WorkoutExerciseSet) =>
 														segment.load /
 														workouts.reduce(
@@ -354,7 +354,7 @@ function StudentDetails() {
 															),
 														}),
 													)}
-													color="#C43343"
+													color="#0B69D4"
 													x="day"
 													y={(segment: WorkoutExerciseSet) =>
 														segment.reps /
@@ -385,7 +385,7 @@ function StudentDetails() {
 												offset={(1 / workouts.length) * 100}
 												style={{ labels: { fill: "white" } }}
 											>
-												<VictoryStack colorScale="cool">
+												<VictoryStack colorScale="warm">
 													{Array.from({ length: workoutMetadata.maxSets }).map(
 														(_, set) => (
 															<VictoryBar
@@ -420,7 +420,7 @@ function StudentDetails() {
 														),
 													)}
 												</VictoryStack>
-												<VictoryStack colorScale="warm">
+												<VictoryStack colorScale="cool">
 													{Array.from({ length: workoutMetadata.maxSets }).map(
 														(_, set) => (
 															<VictoryBar
@@ -460,11 +460,11 @@ function StudentDetails() {
 									</VictoryChart>
 									<div class="flex justify-evenly w-full">
 										<div class="flex items-center gap-1">
-											<div class="rounded-full w-4 aspect-square bg-[#0B69D4]" />
+											<div class="rounded-full w-4 aspect-square bg-[#C43343]" />
 											<p>Carga</p>
 										</div>
 										<div class="flex items-center gap-1">
-											<div class="rounded-full w-4 aspect-square bg-[#C43343]" />
+											<div class="rounded-full w-4 aspect-square bg-[#0B69D4]" />
 											<p>Repetições</p>
 										</div>
 									</div>
