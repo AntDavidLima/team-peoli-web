@@ -98,7 +98,7 @@ function StudentDetails() {
 	});
 
 	const { data: exercises } = useQuery({
-		queryKey: ["student", id, "exercises"],
+		queryKey: ["student", id, "exercises", date?.from, date?.to],
 		queryFn: fetchUserExercises,
 	});
 
@@ -480,6 +480,12 @@ function StudentDetails() {
 	async function fetchUserExercises() {
 		const { data: exercises } = await api.get<Exercise[]>(
 			`/user/${id}/exercise`,
+			{
+				params: {
+					startDate: date?.from,
+					endDate: date?.to,
+				}
+			}
 		);
 
 		return exercises;
