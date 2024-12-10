@@ -269,7 +269,7 @@ function StudentDetails() {
 										height={300}
 									>
 										<VictoryAxis
-											dependentAxis
+											dependentAxis 
 											tickFormat={(tick) =>
 												Math.floor(
 													(tick * workoutMetadata.maxLoad) /
@@ -302,10 +302,10 @@ function StudentDetails() {
 											<VictoryChart>
 												<VictoryAxis
 													tickValues={workouts.map(({ workout }) =>
-														format(new Date(workout.startTime), "d"),
+														format(new Date(workout.startTime), "d/M/yy"),
 													)}
 													style={{
-														tickLabels: { fill: "white" },
+														tickLabels: { fill: "white", fontSize: 10 },
 														axis: {
 															strokeWidth: 4,
 															stroke: "url(#red-to-blue)",
@@ -315,7 +315,7 @@ function StudentDetails() {
 												<VictoryGroup
 													data={workouts.map(
 														({ workout, WorkoutExerciseSets }) => ({
-															day: format(new Date(workout.startTime), "d"),
+															day: format(new Date(workout.startTime), "d/M/yy"),
 															load: WorkoutExerciseSets.reduce(
 																(total, set) => total + set.load,
 																0,
@@ -347,7 +347,7 @@ function StudentDetails() {
 												<VictoryGroup
 													data={workouts.map(
 														({ workout, WorkoutExerciseSets }) => ({
-															day: format(new Date(workout.startTime), "d"),
+															day: format(new Date(workout.startTime), "d/M/yy"),
 															reps: WorkoutExerciseSets.reduce(
 																(total, set) => total + set.reps,
 																0,
@@ -393,7 +393,7 @@ function StudentDetails() {
 																	({ workout, WorkoutExerciseSets }) => ({
 																		day: format(
 																			new Date(workout.startTime),
-																			"d",
+																			"d/M/yy",
 																		),
 																		load: WorkoutExerciseSets[set]?.load,
 																	}),
@@ -428,7 +428,7 @@ function StudentDetails() {
 																	({ workout, WorkoutExerciseSets }) => ({
 																		day: format(
 																			new Date(workout.startTime),
-																			"d",
+																			"d/M/yy",
 																		),
 																		reps: WorkoutExerciseSets[set]?.reps,
 																	}),
