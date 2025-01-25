@@ -175,7 +175,7 @@ function StudentDetails() {
               </linearGradient>
             </defs>
           </svg>
-          <div class="grid-cols-2 grid mt-4 gap-4">
+          <div class="mt-4 space-y-4">
             {exercises?.map(({ name, id, workouts }) => {
               const workoutMetadata = workouts.reduce(
                 (accumulator, workout) => {

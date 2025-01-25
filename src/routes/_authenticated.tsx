@@ -62,8 +62,10 @@ function AuthenticatedLayout() {
 					/>
 				</ul>
 			</aside>
-			<main class="container mx-auto py-12 overflow-y-scroll">
-				<Outlet />
+			<main class="py-12 overflow-y-scroll w-full">
+				<div className="container">
+					<Outlet />
+				</div>
 			</main>
 		</div>
 	);

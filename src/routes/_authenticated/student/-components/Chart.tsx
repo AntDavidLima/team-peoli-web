@@ -13,8 +13,8 @@ import {
 } from "victory";
 import { Workout, WorkoutExerciseSet } from "../$id";
 import { useState } from "react";
-import { addDays, addHours, subDays, subHours } from "date-fns";
 import { signal } from "@preact/signals";
+import { addHours, subHours } from "date-fns";
 
 type WorkoutMetadata = {
   maxLoad: number;
@@ -42,6 +42,12 @@ window.onkeyup = (event) => {
   }
 };
 
+const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  year: "2-digit",
+  month: "numeric",
+  day: "numeric",
+});
+
 export function Chart({ name, workoutMetadata, workouts }: Chart) {
   const [chartDomain, setChartDomain] = useState<{
     x: DomainTuple;
@@ -52,14 +58,20 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
     <div class="bg-card items-center flex flex-col rounded py-4">
       <h2 class="text-lg font-semibold">{name}</h2>
       <VictoryChart
-        height={150}
+        height={64}
+        padding={{
+          left: 32,
+          right: 32,
+          top: 8,
+          bottom: 24,
+        }}
         domain={{
           y: [0, workoutMetadata.maxSets],
           x: [
-            subHours(new Date(workouts[0].workout.startTime), 118),
+            subHours(new Date(workouts[0].workout.startTime), 26),
             addHours(
               new Date(workouts[workouts.length - 1].workout.startTime),
-              118
+              26
             ),
           ],
         }}
@@ -80,6 +92,7 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
               stroke: "url(#red-to-blue)",
             },
           }}
+          tickFormat={dateFormatter.format}
         />
         <VictoryGroup color="#0B69D4">
           <VictoryLine
@@ -180,14 +193,17 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
         domain={{
           y: [0, workoutMetadata.maxSets],
           x: [
-            subDays(new Date(workouts[0].workout.startTime), 1),
-            addDays(
-              new Date(workouts[workouts.length - 1].workout.startTime),
-              1
-            ),
+            subHours(new Date(workouts[0].workout.startTime), 1),
+            addHours(new Date(workouts[workouts.length - 1].workout.startTime), 1),
           ],
         }}
-        height={250}
+        height={216}
+        padding={{
+          left: 32,
+          right: 32,
+          top: 16,
+          bottom: 32,
+        }}
         scale={{ x: "time" }}
         containerComponent={
           <VictoryZoomContainer
@@ -206,6 +222,7 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
               stroke: "url(#red-to-blue)",
             },
           }}
+          tickFormat={dateFormatter.format}
         />
         <VictoryAxis
           dependentAxis
@@ -232,10 +249,7 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
             axis: { stroke: "#0B69D4", strokeWidth: 4 },
           }}
         />
-        <VictoryGroup
-          offset={(1 / workouts.length) * 125}
-          style={{ labels: { fill: "white" } }}
-        >
+        <VictoryGroup style={{ labels: { fill: "white" } }} offset={28}>
           <VictoryStack colorScale="warm">
             {Array.from({ length: workoutMetadata.maxSets }).map((_, set) => (
               <VictoryBar
@@ -243,6 +257,7 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
                   day: new Date(workout.startTime),
                   load: WorkoutExerciseSets[set]?.load,
                 }))}
+                barWidth={24}
                 x="day"
                 y={(segment) =>
                   segment.load /
@@ -275,6 +290,7 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
                     0
                   )
                 }
+                barWidth={24}
                 labels={({ datum }: { datum: WorkoutExerciseSet }) =>
                   datum.reps
                 }
