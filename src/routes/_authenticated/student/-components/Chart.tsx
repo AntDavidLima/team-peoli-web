@@ -211,6 +211,7 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
             zoomDomain={chartDomain}
             onZoomDomainChange={(domain) => setChartDomain(domain)}
             allowZoom={!zoomDisabled.value}
+            minimumZoom={{ x: 1000 * 60 * 60 * 24 }}
           />
         }
       >

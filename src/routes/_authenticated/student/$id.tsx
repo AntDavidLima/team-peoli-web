@@ -13,7 +13,7 @@ import { api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { Student } from ".";
@@ -21,6 +21,16 @@ import { MuscleGroup } from "../exercise";
 import { Routine, RoutineProps } from "./-components/Routine";
 import { SetsCalc } from "./-components/SetsCalc";
 import { Chart } from "./-components/Chart";
+import { signal } from "@preact/signals";
+import { format, subMonths } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
 
 export enum Day {
   SUNDAY = "D",
@@ -61,6 +71,11 @@ export interface WorkoutExerciseSet {
   reps: number;
 }
 
+const date = signal<DateRange | undefined>({
+  from: new Date(),
+  to: subMonths(new Date(), 1),
+});
+
 function StudentDetails() {
   const { id } = Route.useParams();
 
@@ -74,7 +89,7 @@ function StudentDetails() {
   const queryClient = useQueryClient();
 
   const { data: exercises } = useQuery({
-    queryKey: ["student", id, "exercises"],
+    queryKey: ["student", id, "exercises", date.value?.from, date.value?.to],
     queryFn: fetchUserExercises,
   });
 
@@ -162,6 +177,43 @@ function StudentDetails() {
           </div>
         </TabsContent>
         <TabsContent value="statistics">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                className={cn(
+                  "w-[300px] justify-start text-left font-normal normal-case",
+                  !date && "text-muted-foreground"
+                )}
+                variant="outline"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date.value?.from ? (
+                  date.value.to ? (
+                    <>
+                      {format(date.value.from, "dd MMM, y")} -{" "}
+                      {format(date.value.to, "dd MMM, y")}
+                    </>
+                  ) : (
+                    format(date.value.from, "dd MMM, y")
+                  )
+                ) : (
+                  <span>Selecione uma data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={date.value?.from}
+                selected={date.value}
+                onSelect={(newDate) => {
+                  date.value = newDate;
+                }}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
           <svg style={{ height: 0 }}>
             <defs>
               <linearGradient
@@ -216,7 +268,13 @@ function StudentDetails() {
 
   async function fetchUserExercises() {
     const { data: exercises } = await api.get<Exercise[]>(
-      `/user/${id}/exercise`
+      `/user/${id}/exercise`,
+      {
+        params: {
+          startDate: date.value?.from,
+          endDate: date.value?.to,
+        },
+      }
     );
 
     return exercises;
