@@ -94,6 +94,50 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
           }}
           tickFormat={dateFormatter.format}
         />
+        <VictoryGroup color="#C43343">
+          <VictoryLine
+            data={workouts.map(({ workout, WorkoutExerciseSets }) => ({
+              day: new Date(workout.startTime),
+              load: WorkoutExerciseSets.reduce(
+                (total, set) => total + set.load,
+                0
+              ),
+            }))}
+            x="day"
+            y={(segment: WorkoutExerciseSet) =>
+              segment.load /
+              workouts.reduce((maxLoad, { WorkoutExerciseSets }) => {
+                const totalLoad = WorkoutExerciseSets.reduce(
+                  (total, set) => total + set.load,
+                  0
+                );
+
+                return Math.max(maxLoad, totalLoad);
+              }, 0)
+            }
+          />
+          <VictoryScatter
+            data={workouts.map(({ workout, WorkoutExerciseSets }) => ({
+              day: new Date(workout.startTime),
+              load: WorkoutExerciseSets.reduce(
+                (total, set) => total + set.load,
+                0
+              ),
+            }))}
+            x="day"
+            y={(segment: WorkoutExerciseSet) =>
+              segment.load /
+              workouts.reduce((maxLoad, { WorkoutExerciseSets }) => {
+                const totalLoad = WorkoutExerciseSets.reduce(
+                  (total, set) => total + set.load,
+                  0
+                );
+
+                return Math.max(maxLoad, totalLoad);
+              }, 0)
+            }
+          />
+        </VictoryGroup>
         <VictoryGroup color="#0B69D4">
           <VictoryLine
             style={{
@@ -140,50 +184,6 @@ export function Chart({ name, workoutMetadata, workouts }: Chart) {
                 );
 
                 return Math.max(maxReps, totalReps);
-              }, 0)
-            }
-          />
-        </VictoryGroup>
-        <VictoryGroup color="#C43343">
-          <VictoryLine
-            data={workouts.map(({ workout, WorkoutExerciseSets }) => ({
-              day: new Date(workout.startTime),
-              load: WorkoutExerciseSets.reduce(
-                (total, set) => total + set.load,
-                0
-              ),
-            }))}
-            x="day"
-            y={(segment: WorkoutExerciseSet) =>
-              segment.load /
-              workouts.reduce((maxLoad, { WorkoutExerciseSets }) => {
-                const totalLoad = WorkoutExerciseSets.reduce(
-                  (total, set) => total + set.load,
-                  0
-                );
-
-                return Math.max(maxLoad, totalLoad);
-              }, 0)
-            }
-          />
-          <VictoryScatter
-            data={workouts.map(({ workout, WorkoutExerciseSets }) => ({
-              day: new Date(workout.startTime),
-              load: WorkoutExerciseSets.reduce(
-                (total, set) => total + set.load,
-                0
-              ),
-            }))}
-            x="day"
-            y={(segment: WorkoutExerciseSet) =>
-              segment.load /
-              workouts.reduce((maxLoad, { WorkoutExerciseSets }) => {
-                const totalLoad = WorkoutExerciseSets.reduce(
-                  (total, set) => total + set.load,
-                  0
-                );
-
-                return Math.max(maxLoad, totalLoad);
               }, 0)
             }
           />
