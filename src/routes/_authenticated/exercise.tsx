@@ -131,7 +131,7 @@ const createExerciseFormSchema = yup.object({
 		.min(1, "Selecione ao menos um grupo")
 		.required(),
 	executionVideo: yup.mixed<Blob>(),
-	executionVideoUrl: yup.string().optional(),
+	executionVideoUrl: yup.string().nullable(),
 });
 
 type CreateExerciseForm = yup.InferType<typeof createExerciseFormSchema>;
@@ -261,6 +261,8 @@ function Exercise() {
 			instructions: EditorState.createEmpty(),
 		},
 	});
+
+	console.log(form.formState.errors)
 
 	const debouncedSearchExercise = _.debounce((query: string) => {
 		navigate({
@@ -677,7 +679,7 @@ function Exercise() {
 												{form.getValues("executionVideoUrl") && (
 													<div className="flex justify-center">
 														<video className="h-48 aspect-video bg-card rounded" controls>
-															<source src={form.getValues("executionVideoUrl")} />
+															<source src={form.getValues("executionVideoUrl") || undefined} />
 														</video>
 													</div>
 												)}
