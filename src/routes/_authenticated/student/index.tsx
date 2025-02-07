@@ -186,7 +186,7 @@ function StudentsList() {
     },
   });
 
-  const { mutate: sendWelcomeMail } = useMutation({
+  const { mutate: sendWelcomeMail, isPending: sendingWelcomeMail } = useMutation({
     mutationFn: sendMail,
     onSuccess: () => {
       toast({
@@ -231,6 +231,7 @@ function StudentsList() {
                 e.stopPropagation();
                 sendWelcomeMail(row.original.id);
               }}
+              disabled={sendingWelcomeMail}
             >
               <Mail size={14} />
             </Button>
@@ -389,7 +390,7 @@ function StudentsList() {
           rows={students}
           columns={tableColumns}
           onRowClick={handleTableRowClick}
-          isLoading={loadingStudents}
+          isLoading={loadingStudents || sendingWelcomeMail}
         />
         <div class="flex items-center p-2 border-t-muted border-t gap-4 justify-end text-sm">
           <div class="flex items-center gap-2">
