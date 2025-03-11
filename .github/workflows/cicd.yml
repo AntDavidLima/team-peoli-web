@@ -34,11 +34,12 @@ jobs:
           key: ${{ secrets.KEY }}
           source: "dist"
           target: /home/admin/web
-      # - name: Copy files to the right path
-      #   run: rsync --remove-source-files -r ./ /home/admin/web
-      # - name: Build docker and run image
-      #   working-directory: /home/admin/web
-      #   run: docker compose up -d
-      # - name: Clean up
-      #   working-directory: /home/admin/web
-      #   run: ls | grep -xvE ".env" | xargs rm -r
+      - name: Copy privacy policy to the right path
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          port: ${{ secrets.PORT }}
+          key: ${{ secrets.KEY }}
+          source: "politica-privacidade.html"
+          target: /home/admin/web
