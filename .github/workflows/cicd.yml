@@ -32,14 +32,5 @@ jobs:
           username: ${{ secrets.USERNAME }}
           port: ${{ secrets.PORT }}
           key: ${{ secrets.KEY }}
-          source: "dist"
+          source: "dist,politica-privacidade"
           target: /home/admin/web
-      - name: Copy privacy policy to the right path
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          port: ${{ secrets.PORT }}
-          key: ${{ secrets.KEY }}
-          source: "politica-privacidade.html"
-          target: /home/admin/web/politica-privacidade/index.html
