@@ -42,4 +42,4 @@ jobs:
           port: ${{ secrets.PORT }}
           key: ${{ secrets.KEY }}
           source: "politica-privacidade.html"
-          target: /home/admin/web
+          target: /home/admin/web/politica-privacidade/index.html
