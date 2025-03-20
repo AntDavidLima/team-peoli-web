@@ -101,7 +101,7 @@ export const Route = createFileRoute("/_authenticated/exercise")({
   validateSearch: (search) => exerciseSearchSchema.validateSync(search),
 });
 
-export interface Exercise {
+export interface IExercise {
   id: number;
   name: string;
   restTime: number;
@@ -132,7 +132,7 @@ const createExerciseFormSchema = yup.object({
         value: yup.number().required(),
         label: yup.string().required(),
         weight: yup.number().required(),
-      })
+      }),
     )
     .min(1, "Selecione ao menos um grupo")
     .required(),
@@ -154,7 +154,7 @@ const updateExerciseFormSchema = yup.object({
         value: yup.number().required(),
         label: yup.string().required(),
         weight: yup.number().required(),
-      })
+      }),
     )
     .min(1, "Selecione ao menos um grupo")
     .required(),
@@ -171,7 +171,7 @@ interface CreateMuscleGroupForm {
 function Exercise() {
   const navigate = useNavigate();
 
-  const tableColumns: ColumnDef<Exercise>[] = [
+  const tableColumns: ColumnDef<IExercise>[] = [
     {
       accessorKey: "name",
       header: "Nome",
@@ -206,7 +206,7 @@ function Exercise() {
                     "instructions",
                     value
                       ? EditorState.createWithContent(convertFromRaw(value))
-                      : EditorState.createEmpty()
+                      : EditorState.createEmpty(),
                   );
 
                   return;
@@ -219,7 +219,7 @@ function Exercise() {
                       value: muscleGroup.muscleGroup.id,
                       label: muscleGroup.muscleGroup.name,
                       weight: muscleGroup.weight,
-                    }))
+                    })),
                   );
 
                   return;
@@ -454,7 +454,7 @@ function Exercise() {
                 value={focusedMuscleGroup.value?.weight}
                 onChange={(e) =>
                   (focusedMuscleGroup.value!.weight = Number(
-                    e.currentTarget.value
+                    e.currentTarget.value,
                   ))
                 }
                 type="number"
@@ -470,7 +470,7 @@ function Exercise() {
                         ...form.getValues("muscleGroups"),
                         focusedMuscleGroup.value!,
                       ],
-                      { shouldTouch: true }
+                      { shouldTouch: true },
                     );
                   }}
                 >
@@ -493,7 +493,7 @@ function Exercise() {
                 value={focusedMuscleGroup.value?.weight}
                 onChange={(e) =>
                   (focusedMuscleGroup.value!.weight = Number(
-                    e.currentTarget.value
+                    e.currentTarget.value,
                   ))
                 }
                 type="number"
@@ -516,7 +516,7 @@ function Exercise() {
                           return muscleGroup;
                         }),
                       ],
-                      { shouldTouch: true }
+                      { shouldTouch: true },
                     );
                   }}
                 >
@@ -547,7 +547,7 @@ function Exercise() {
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(
-                    edittingExerciseId.value ? patchExercise : addExercise
+                    edittingExerciseId.value ? patchExercise : addExercise,
                   )}
                   class="space-y-6"
                 >
@@ -786,7 +786,7 @@ function Exercise() {
             </SheetContent>
           </Sheet>
         </div>
-        <DataGrid<Exercise>
+        <DataGrid<IExercise>
           rows={exercises}
           columns={tableColumns}
           isLoading={loadingExercises}
@@ -871,7 +871,7 @@ function Exercise() {
         restTime,
         instructions: JSON.stringify(instructionsRawDraft),
         muscleGroups: muscleGroups.map(
-          ({ label, ...muscleGroup }) => muscleGroup
+          ({ label, ...muscleGroup }) => muscleGroup,
         ),
         executionVideo,
         videoThumbnail,
@@ -880,7 +880,7 @@ function Exercise() {
         onUploadProgress: ({ loaded, total }) => {
           videoUploadProgress.value = Math.round((loaded * 100) / (total || 1));
         },
-      }
+      },
     );
   }
 
@@ -901,7 +901,7 @@ function Exercise() {
         restTime,
         instructions: JSON.stringify(instructionsRawDraft),
         muscleGroups: muscleGroups.map(
-          ({ label, ...muscleGroup }) => muscleGroup
+          ({ label, ...muscleGroup }) => muscleGroup,
         ),
         executionVideo,
         videoThumbnail,
@@ -910,7 +910,7 @@ function Exercise() {
         onUploadProgress: ({ loaded, total }) => {
           videoUploadProgress.value = Math.round((loaded * 100) / (total || 1));
         },
-      }
+      },
     );
   }
 
