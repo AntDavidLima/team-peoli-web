@@ -389,7 +389,7 @@ function Exercise() {
             id="search"
             placeholder="Buscar exercício..."
             class="bg-transparent border-muted border-2 rounded p-2 outline-none focus:border-primary"
-            value={query}
+            defaultValue={query}
             onChange={handleQueryChange}
           />
           <AlertDialog

@@ -296,7 +296,7 @@ function StudentsList() {
             placeholder="Buscar aluno..."
             class="bg-transparent border-muted border-2 rounded p-2 outline-none focus:border-primary"
             onChange={handleQueryChange}
-            value={query}
+            defaultValue={query}
           />
           <Sheet
             open={isCreationFormOpen.value}
