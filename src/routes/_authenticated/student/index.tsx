@@ -56,6 +56,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ChevronLeft, ChevronRight, Mail, Pencil, Trash2 } from "lucide-react";
+import { useCallback } from "react";
 
 const studentSearchSchema = yup.object({
   rows: yup.number().optional().default(10),
@@ -112,14 +113,17 @@ function StudentsList() {
 
   const navigate = useNavigate();
 
-  const debouncedSearchStudent = _.debounce((query: string) => {
-    navigate({
-      search: (previousSearch) => ({
-        ...previousSearch,
-        query,
-      }),
-    });
-  }, 300);
+  const debouncedSearchStudent = useCallback(
+    _.debounce((query: string) => {
+      navigate({
+        search: (previousSearch) => ({
+          ...previousSearch,
+          query,
+        }),
+      });
+    }, 300),
+    [],
+  );
 
   const form = useForm<CreateStudentForm>({
     resolver: yupResolver(createStudentFormSchema),
@@ -186,27 +190,28 @@ function StudentsList() {
     },
   });
 
-  const { mutate: sendWelcomeMail, isPending: sendingWelcomeMail } = useMutation({
-    mutationFn: sendMail,
-    onSuccess: () => {
-      toast({
-        title: "E-mail de boas-vindas enviado com sucesso!",
-        variant: "success",
-      });
-    },
-    onError: (error) => {
-      if (error instanceof AxiosError) {
-        const apiError = error.response?.data as APIError;
+  const { mutate: sendWelcomeMail, isPending: sendingWelcomeMail } =
+    useMutation({
+      mutationFn: sendMail,
+      onSuccess: () => {
+        toast({
+          title: "E-mail de boas-vindas enviado com sucesso!",
+          variant: "success",
+        });
+      },
+      onError: (error) => {
+        if (error instanceof AxiosError) {
+          const apiError = error.response?.data as APIError;
 
-        if (typeof apiError.error === "string") {
-          toast({
-            title: apiError.message,
-            variant: "destructive",
-          });
+          if (typeof apiError.error === "string") {
+            toast({
+              title: apiError.message,
+              variant: "destructive",
+            });
+          }
         }
-      }
-    },
-  });
+      },
+    });
 
   const tableColumns: ColumnDef<Student>[] = [
     {
@@ -319,7 +324,7 @@ function StudentsList() {
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(
-                    edittingStudentId.value ? patchStudent : addStudent
+                    edittingStudentId.value ? patchStudent : addStudent,
                   )}
                   class="space-y-6"
                 >
@@ -367,7 +372,7 @@ function StudentsList() {
                             value={phone.mask(value)}
                             onChange={(event) => {
                               event.currentTarget.value = phone.unmask(
-                                event.currentTarget.value
+                                event.currentTarget.value,
                               );
                               onChange(event);
                             }}

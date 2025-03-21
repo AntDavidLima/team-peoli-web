@@ -72,6 +72,7 @@ import _ from "lodash";
 import { AxiosError } from "axios";
 import { toast } from "@/components/ui/use-toast";
 import { Progress } from "@/components/ui/progress.tsx";
+import { useCallback } from "react";
 
 interface SelectOption {
   label: string;
@@ -273,14 +274,17 @@ function Exercise() {
 
   console.log(form.formState.errors);
 
-  const debouncedSearchExercise = _.debounce((query: string) => {
-    navigate({
-      search: (previousSearch) => ({
-        ...previousSearch,
-        query,
-      }),
-    });
-  }, 300);
+  const debouncedSearchExercise = useCallback(
+    _.debounce((query: string) => {
+      navigate({
+        search: (previousSearch) => ({
+          ...previousSearch,
+          query,
+        }),
+      });
+    }, 300),
+    [],
+  );
 
   const queryClient = useQueryClient();
 
