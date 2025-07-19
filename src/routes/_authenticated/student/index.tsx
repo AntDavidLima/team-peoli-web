@@ -74,6 +74,7 @@ const createStudentFormSchema = yup.object({
     .matches(/^\d{11}$/, { message: "Telefone inválido" })
     .length(11, { message: "O telefone deve possuir 11 dígitos" })
     .required("Campo obrigatório"),
+  isActive: yup.boolean(),
 });
 
 type CreateStudentForm = yup.InferType<typeof createStudentFormSchema>;
@@ -91,6 +92,7 @@ export interface Student {
   email: string;
   phone: string;
   lastPasswordChange: Date;
+  isActive: boolean;
 }
 
 const isCreationFormOpen = signal(false);
@@ -383,6 +385,35 @@ function StudentsList() {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Acesso</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(value === 'true')}
+                          value={String(field.value)}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Altere o acesso do aluno" />
+                            </SelectTrigger>
+                          </FormControl>
+                            <SelectContent>
+                              <SelectItem value="true">Ativo</SelectItem>
+                              <SelectItem value="false">Inativo</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {!edittingStudentId.value && (
+                          <FormDescription>
+                            Altera o acesso do aluno. Se inativo, o aluno não poderá acessar o sistema.
+                          </FormDescription>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <Button>
                     {edittingStudentId.value ? "Salvar" : "Cadastrar"}
                   </Button>
@@ -504,11 +535,12 @@ function StudentsList() {
     await api.delete(`/user/${id}`);
   }
 
-  async function updateStudent({ phone, email, name }: UpdateStudentForm) {
+  async function updateStudent({ phone, email, name, isActive }: UpdateStudentForm) {
     await api.patch(`/user/${edittingStudentId.value}`, {
       phone,
       email,
       name,
+      isActive
     });
   }
 
