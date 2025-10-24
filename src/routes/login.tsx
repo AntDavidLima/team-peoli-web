@@ -9,6 +9,9 @@ import { AxiosError } from "axios";
 import { Eye, EyeOff, Mail, RectangleEllipsis } from "lucide-react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
+import EmailIcon from '@/../public/assets/icons/email.svg?react';
+import PasswordIcon from '@/../public/assets/icons/password.svg?react';
+import SeeIcon from '@/../public/assets/icons/see.svg?react';
 
 const loginFormSchema = yup.object({
 	email: yup.string().email("E-mail inválido").required("Campo obrigatório"),
@@ -54,31 +57,36 @@ function Login() {
 
 	return (
 		<div class="bg-[url('/assets/login-background.jpg')] bg-top bg-cover bg-fixed h-dvh">
-			<main class="backdrop-blur-lg h-dvh overflow-y-scroll">
-				<div class="flex items-center flex-col container mx-auto p-4 h-full">
+			<main class="backdrop-blur-sm h-dvh overflow-y-scroll justify-center items-center flex">
+				<div class="bg-background/85 rounded-[40px] border-2 border max-w-[500px] flex justify-center items-center flex-col container mx-auto min-h-[80%]">
 					<h1>
 						<img
-							src="/assets/logo-horizontal.svg"
-							alt='Logo do Team Peoli (Mago com chapeu e barba grande escrito "Team Peoli" ao lado)'
-							class="drop-shadow-md fill-white w-56 my-24"
+							src="/assets/logo.png"
+							alt='Logo do Team Peoli'
+							class="drop-shadow-md fill-white w-56 mt-16 mb-8"
 						/>
 					</h1>
+					<h2 class="text-2xl font-bold">
+						Bem-vindo de volta, Coach!
+					</h2>
+					<p class="text-secondary text-sm">Seu sistema. Seu time. Sua missão.</p>
 					<form
-						class="flex flex-col gap-8 w-full max-w-80"
+						class="mt-4 flex flex-col gap-2 w-full"
 						onSubmit={handleSubmit(handleLogin)}
 					>
-						<div class="flex flex-col gap-1">
+						<div class="flex flex-col gap-2">
 							<label
 								for="email"
-								class="font-medium drop-shadow-md flex items-center gap-1"
+								class="text-[#FFFFFF] font-medium drop-shadow-md flex items-center gap-2"
 							>
-								<Mail size={16} />
+								<EmailIcon height={16} width={16}></EmailIcon>
 								E-mail
 							</label>
 							<input
-								class="text-input h-10 rounded p-1 drop-shadow-md focus:outline focus:outline-primary data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900"
+								class="px-4 text-white bg-gray-600 text-input h-12 border-[0.5px] border-[#C1C2C1] rounded p-1 drop-shadow-md focus:outline focus:outline-primary data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900"
 								id="email"
 								placeholder="seuemail@exemplo.com"
+								placeholderTextColor="#AAAAAA" 
 								data-invalid={errors.email}
 								{...register("email")}
 							/>
@@ -89,19 +97,20 @@ function Login() {
 								{errors.email?.message}
 							</p>
 						</div>
-						<div class="flex flex-col gap-1">
+						<div class="flex flex-col gap-2">
 							<label
 								for="password"
-								class="font-medium drop-shadow-md flex items-center gap-1"
+								class="text-[#FFFFFF] font-medium drop-shadow-md flex items-center gap-2"
 							>
-								<RectangleEllipsis size={16} />
+								<PasswordIcon height={16} width={16}></PasswordIcon>
 								Senha
 							</label>
 							<div class="relative">
 								<input
-									class="w-full h-10 rounded p-1 drop-shadow-md focus:outline focus:outline-primary text-input text-xs data-[visible=true]:text-base data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900 pr-8"
+									class="px-4 text-white bg-gray-600 w-full h-12 border-[0.5px] border-[#C1C2C1] rounded p-1 drop-shadow-md focus:outline focus:outline-primary text-input text-xs data-[visible=true]:text-base data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900 pr-8"
 									id="password"
 									type={passwordVisible.value ? "text" : "password"}
+									placeholderTextColor="#AAAAAA" 
 									placeholder="••••••••••••"
 									data-invalid={errors.password}
 									data-visible={passwordVisible.value}
@@ -109,7 +118,7 @@ function Login() {
 								/>
 								<button
 									type="button"
-									class="absolute right-2 top-3 text-gray-500 cursor-pointer flex"
+									class="absolute right-3 top-4 text-gray-500 cursor-pointer flex"
 									onClick={() =>
 										(passwordVisible.value = !passwordVisible.value)
 									}
@@ -117,7 +126,7 @@ function Login() {
 									{passwordVisible.value ? (
 										<EyeOff size={16} />
 									) : (
-										<Eye size={16} />
+										<SeeIcon size={16} />
 									)}
 								</button>
 							</div>
@@ -129,18 +138,17 @@ function Login() {
 									{errors.password.message}
 								</p>
 							)}
-							<p class="font-medium text-sm drop-shadow-md">
-								Esqueceu sua senha?{" "}
+							<p class="text-secondary text-right font-medium text-sm drop-shadow-md">
 								<a
-									class="font-semibold text-primary cursor-pointer outline-none focus:bg-primary focus:text-white underline"
+									class="no-underline font-semibold text-primary cursor-pointer outline-none focus:bg-primary focus:text-white underline"
 									href="/"
 								>
-									Clique aqui
+									Esqueceu a senha?
 								</a>
 							</p>
 						</div>
-						<Button type="submit" className="my-10 drop-shadow-md">
-							Acessar
+						<Button type="submit" className="bg-primary my-6 drop-shadow-md w-[80%] h-12 self-center">
+							Entrar
 						</Button>
 					</form>
 				</div>

@@ -24,7 +24,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { APIError, api } from "@/lib/api";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -36,7 +35,7 @@ import {
 } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ColumnDef } from "@tanstack/react-table";
-import { TargetedEvent } from "react";
+import { TargetedEvent, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import _ from "lodash";
@@ -102,13 +101,14 @@ function StudentsList() {
   const queryClient = useQueryClient();
 
   const { rows, page, query } = Route.useSearch();
+  const [activeFilter, setActiveFilter] = useState("Todos");
 
   const {
     data: [totalStudents, students],
     isFetching: loadingStudents,
   } = useQuery({
-    queryKey: ["students", page, rows, query],
-    queryFn: () => fetchStudents({ rows, page, query }),
+    queryKey: ["students", page, rows, query, activeFilter],
+    queryFn: () => fetchStudents({ rows, page, query, status: activeFilter }),
     initialData: [0, []],
     placeholderData: keepPreviousData,
   });
@@ -121,6 +121,7 @@ function StudentsList() {
         search: (previousSearch) => ({
           ...previousSearch,
           query,
+          page: 1,
         }),
       });
     }, 300),
@@ -175,6 +176,7 @@ function StudentsList() {
     mutationFn: updateStudent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      edittingStudentId.value = null;
       isCreationFormOpen.value = false;
       form.reset();
     },
@@ -204,7 +206,7 @@ function StudentsList() {
       onError: (error) => {
         if (error instanceof AxiosError) {
           const apiError = error.response?.data as APIError;
-
+          
           if (typeof apiError.error === "string") {
             toast({
               title: apiError.message,
@@ -218,18 +220,28 @@ function StudentsList() {
   const tableColumns: ColumnDef<Student>[] = [
     {
       accessorKey: "name",
-      header: "Nome",
+      header: "ALUNO",
     },
-    { accessorKey: "email", header: "E-mail" },
+    { accessorKey: "email",
+      header: "CONTATO",
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span>{row.original.email}</span>
+          <span className="text-xs text-muted-foreground">
+            {phone.mask(row.original.phone)}
+          </span>
+        </div>
+      ),
+    },
     {
-      accessorKey: "phone",
-      header: "Telefone",
-      cell: ({ row }) => phone.mask(row.original.phone),
+      accessorKey: "status",
+      header: "STATUS",
+      cell: ({ row }) => row.original.isActive ? 'Ativo': 'Inativo',
     },
     {
       id: "actions",
       cell: ({ row }) => (
-        <div class="invisible group-hover:visible text-right space-x-1">
+        <div className="invisible group-hover:visible text-right space-x-1">
           {!row.original.lastPasswordChange && (
             <Button
               size="icon"
@@ -258,8 +270,8 @@ function StudentsList() {
             <Pencil size={14} />
           </Button>
           <AlertDialog>
-            <AlertDialogTrigger onClick={(e) => e.stopPropagation()}>
-              <Button size="icon" variant="ghost">
+            <AlertDialogTrigger asChild>
+              <Button size="icon" variant="ghost" onClick={(e) => e.stopPropagation()}>
                 <Trash2 size={14} />
               </Button>
             </AlertDialogTrigger>
@@ -286,150 +298,173 @@ function StudentsList() {
     },
   ];
 
+  const handleFilterClick = (filter: string) => {
+    setActiveFilter(filter);
+    navigate({
+      search: (prev) => ({ ...prev, page: 1 }),
+    });
+  };
+
   return (
-    <Page title="Alunos" description="Cadastre, edite e remova alunos">
-      <div class="bg-card rounded mt-8">
-        <div class="p-6 flex items-center justify-between">
-          <label class="sr-only" for="search">
+    <Page title="Alunos" description="Cadastre, edite e acompanhe seus alunos">
+      <Button
+        className="float-right -mt-10"
+        onClick={() => (isCreationFormOpen.value = true)}
+      >
+        Cadastrar Aluno
+      </Button>
+        <div className="py-6 flex items-center justify-between gap-2">
+          <label className="sr-only" htmlFor="search">
             Buscar aluno
           </label>
-          <input
+          <Input
             id="search"
-            placeholder="Buscar aluno..."
-            class="bg-transparent border-muted border-2 rounded p-2 outline-none focus:border-primary"
+            placeholder="Buscar aluno por nome ou e-mail..."
+            className="w-[80%] h-12 bg-card border border-[0.5px] rounded-lg p-2 outline-none focus:border-primary"
             onChange={handleQueryChange}
             defaultValue={query}
           />
-          <Sheet
-            open={isCreationFormOpen.value}
-            onOpenChange={(open) => {
-              isCreationFormOpen.value = open;
-              edittingStudentId.value && setTimeout(() => form.reset(), 500);
-              edittingStudentId.value = null;
-            }}
-          >
-            <SheetTrigger asChild>
-              <Button>Cadastrar aluno</Button>
-            </SheetTrigger>
-            <SheetContent className="overflow-y-auto">
-              <SheetHeader className="mb-4">
-                <SheetTitle>
-                  {edittingStudentId.value ? "Editar aluno" : "Cadastrar aluno"}
-                </SheetTitle>
-                {!edittingStudentId.value && (
-                  <SheetDescription>
-                    Uma senha de acesso provisória será enviada ao e-mail
-                    cadastrado.
-                  </SheetDescription>
-                )}
-              </SheetHeader>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(
-                    edittingStudentId.value ? patchStudent : addStudent,
-                  )}
-                  class="space-y-6"
-                >
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nome do aluno" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>E-mail</FormLabel>
-                        <FormControl>
-                          <Input placeholder="email@exemplo.com" {...field} />
-                        </FormControl>
-                        {!edittingStudentId.value && (
-                          <FormDescription>
-                            E-mail que receberá a senha provisória
-                          </FormDescription>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field: { value, onChange, ...field } }) => (
-                      <FormItem>
-                        <FormLabel>Telefone</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="(99) 99999-9999"
-                            {...field}
-                            value={phone.mask(value)}
-                            onChange={(event) => {
-                              event.currentTarget.value = phone.unmask(
-                                event.currentTarget.value,
-                              );
-                              onChange(event);
-                            }}
-                            type="tel"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="isActive"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Acesso</FormLabel>
-                        <Select
-                          onValueChange={(value) => field.onChange(value === 'true')}
-                          value={String(field.value)}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Altere o acesso do aluno" />
-                            </SelectTrigger>
-                          </FormControl>
-                            <SelectContent>
-                              <SelectItem value="true">Ativo</SelectItem>
-                              <SelectItem value="false">Inativo</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {!edittingStudentId.value && (
-                          <FormDescription>
-                            Altera o acesso do aluno. Se inativo, o aluno não poderá acessar o sistema.
-                          </FormDescription>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button>
-                    {edittingStudentId.value ? "Salvar" : "Cadastrar"}
-                  </Button>
-                </form>
-              </Form>
-            </SheetContent>
-          </Sheet>
+          <div className="bg-card border-[0.5px] border p-1 rounded-lg flex items-center gap-2">
+            {["Todos", "Ativo", "Finalizado", "Inativo"].map((filter) => ( // Ajustado para filtros de status
+              <Button
+                key={filter}
+                variant={activeFilter === filter ? "default" : "ghost"}
+                onClick={() => handleFilterClick(filter)}
+              >
+                {filter}
+              </Button>
+            ))}
+          </div>
         </div>
+        
+        <Sheet
+          open={isCreationFormOpen.value}
+          onOpenChange={(open) => {
+            isCreationFormOpen.value = open;
+            if (!open) {
+              setTimeout(() => {
+                form.reset({ name: '', email: '', phone: '', isActive: true });
+                edittingStudentId.value = null;
+              }, 300);
+            }
+          }}
+        >
+          <SheetContent className="overflow-y-auto">
+            <SheetHeader className="mb-4">
+              <SheetTitle>
+                {edittingStudentId.value ? "Editar aluno" : "Cadastrar aluno"}
+              </SheetTitle>
+              {!edittingStudentId.value && (
+                <SheetDescription>
+                  Uma senha de acesso provisória será enviada ao e-mail
+                  cadastrado.
+                </SheetDescription>
+              )}
+            </SheetHeader>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(
+                  edittingStudentId.value ? patchStudent : addStudent,
+                )}
+                className="space-y-6"
+              >
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do aluno" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input placeholder="email@exemplo.com" {...field} />
+                      </FormControl>
+                      {!edittingStudentId.value && (
+                        <FormDescription>
+                          E-mail que receberá a senha provisória
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field: { value, onChange, ...field } }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="(99) 99999-9999"
+                          {...field}
+                          value={phone.mask(value || "")}
+                          onChange={(event) => {
+                            const unmaskedValue = phone.unmask(event.currentTarget.value);
+                            onChange(unmaskedValue);
+                          }}
+                          type="tel"
+                          maxLength={15}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Acesso</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(value === 'true')}
+                        value={String(field.value)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Altere o acesso do aluno" />
+                          </SelectTrigger>
+                        </FormControl>
+                          <SelectContent>
+                            <SelectItem value="true">Ativo</SelectItem>
+                            <SelectItem value="false">Inativo</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Altera o acesso do aluno. Se inativo, o aluno não poderá acessar o sistema.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit">
+                  {edittingStudentId.value ? "Salvar" : "Cadastrar"}
+                </Button>
+              </form>
+            </Form>
+          </SheetContent>
+        </Sheet>
+      <div className="bg-card rounded-lg mt-8">
         <DataGrid<Student>
           rows={students}
           columns={tableColumns}
           onRowClick={handleTableRowClick}
           isLoading={loadingStudents || sendingWelcomeMail}
         />
-        <div class="flex items-center p-2 border-t-muted border-t gap-4 justify-end text-sm">
-          <div class="flex items-center gap-2">
+        <div className="flex items-center p-2 border-t-muted border-t gap-4 justify-end text-sm">
+          <div className="flex items-center gap-2">
             <p>Linhas por página:</p>
             <Select
               onValueChange={handleRowsPerPageChange}
@@ -446,9 +481,9 @@ function StudentsList() {
             </Select>
           </div>
           <p>
-            {page}-{page * rows} de {totalStudents}
+            {`${(page - 1) * rows + 1}-${Math.min(page * rows, totalStudents)} de ${totalStudents}`}
           </p>
-          <div class="flex items-center">
+          <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
@@ -480,16 +515,13 @@ function StudentsList() {
     });
   }
 
-  async function fetchStudents({ query, rows, page }: StudentSearch) {
-    const { data: students } = await api.get("/user", {
-      params: {
-        query,
-        rows,
-        page,
-      },
-    });
-
-    return students;
+  async function fetchStudents({ query, rows, page, status }: StudentSearch & { status: string }) {
+    const params: Record<string, any> = { query, rows, page };
+    if (status && status !== 'Todos') {
+      params.isActive = status === 'Ativo';
+    }
+    const { data } = await api.get("/user", { params });
+    return data;
   }
 
   function handleRowsPerPageChange(rows: string) {
@@ -497,6 +529,7 @@ function StudentsList() {
       search: (previousSearch) => ({
         ...previousSearch,
         rows: Number(rows),
+        page: 1,
       }),
     });
   }

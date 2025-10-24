@@ -8,6 +8,8 @@ import {
 import { isAuthenticated } from "../signals/authentication";
 import { signal } from "@preact/signals";
 import { ChevronsLeft, Dumbbell, GraduationCap } from "lucide-react";
+import StudentsIcon from '@/../public/assets/icons/students.svg?react';
+import ExerciseIcon from '@/../public/assets/icons/exercise.svg?react';
 
 export const Route = createFileRoute("/_authenticated")({
 	beforeLoad: ({ location }) => {
@@ -36,8 +38,8 @@ function AuthenticatedLayout() {
 					<img
 						src={
 							expanded.value
-								? "/assets/logo-horizontal.svg"
-								: "/assets/logo-without-text.svg"
+								? "/assets/logo.png"
+								: ""
 						}
 						class={expanded.value ? "w-32" : "w-12"}
 					/>
@@ -53,12 +55,12 @@ function AuthenticatedLayout() {
 					<MenuItem
 						to="/student"
 						title="Alunos"
-						icon={<GraduationCap size={20} />}
+						icon={<StudentsIcon size={20} />}
 					/>
 					<MenuItem
 						to="/exercise"
 						title="Exercícios"
-						icon={<Dumbbell size={20} />}
+						icon={<ExerciseIcon size={20} />}
 					/>
 				</ul>
 			</aside>
