@@ -686,7 +686,7 @@ function ProgressionChart({ name, workouts }: ProgressionChartProps) {
           <YAxis
             stroke="hsl(var(--muted-foreground))"
             fontSize={12}
-            tickFormatter={(value) => `${value}%`}
+            tickFormatter={(value: number) => `${value}%`}
             domain={[minDomain, maxDomain]}
             ticks={tickValues}
             tickLine={false}
