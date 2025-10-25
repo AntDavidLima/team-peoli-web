@@ -72,7 +72,7 @@ export const routineFormSchema = yup.object({
 
 type RoutineFormSchema = yup.InferType<typeof routineFormSchema>;
 
-interface Exercise {
+export interface Exercise {
   id: number;
   name: string;
   workouts: Workout[];
@@ -91,7 +91,7 @@ export interface WorkoutExerciseSet {
   reps: number;
 }
 
-interface Training {
+export interface Training {
   id: number;
   name: string;
   exercises: {
@@ -198,14 +198,32 @@ function StudentDetails() {
     return routinesForDropdown.flatMap((routine) => routine.trainings);
   }, [routinesForDropdown]);
 
-  const displayedExercises = useMemo(() => {
-    if (!datedExercises) return [];
+  const progressionChartsData = useMemo(() => {
+    if (!datedExercises || !allTrainings) return [];
+
     if (selectedTraining === ALL_TRAININGS_VALUE) {
-      return datedExercises;
+      return allTrainings
+        .map((training) => {
+          const exerciseIdsInTraining = new Set(
+            training.exercises.map((e) => e.exercise.id)
+          );
+
+          const combinedWorkouts = datedExercises
+            .filter((exercise) => exerciseIdsInTraining.has(exercise.id))
+            .flatMap((exercise) => exercise.workouts);
+
+          return {
+            id: `training-${training.id}`,
+            name: training.name,
+            workouts: combinedWorkouts,
+          };
+        })
+        .filter((t) => t.workouts.length > 0);
     }
-    if (!allTrainings) return [];
+
     const training = allTrainings.find((t) => t.id === selectedTraining);
     if (!training) return [];
+
     const exerciseIdsInTraining = new Set(
       training.exercises.map((e) => e.exercise.id)
     );
@@ -412,12 +430,16 @@ function StudentDetails() {
 
           {isProgressionLoading && <p>Carregando progressão...</p>}
 
-          {!isProgressionLoading && displayedExercises && displayedExercises.length > 0 && (
-            <PeriodSummary exercises={displayedExercises} />
+          {!isProgressionLoading && progressionChartsData && progressionChartsData.length > 0 && (
+            <PeriodSummary
+              exercises={datedExercises || []}
+              trainings={allTrainings}
+              selectedTrainingId={selectedTraining}
+            />
           )}
 
           {!isProgressionLoading &&
-            (!displayedExercises || displayedExercises.length === 0) && (
+            (!progressionChartsData || progressionChartsData.length === 0) && (
               <div className="text-center text-muted-foreground mt-8">
                 <p>
                   Não há dados suficientes para gerar um gráfico de progressão
@@ -427,11 +449,11 @@ function StudentDetails() {
             )}
 
           <div className="space-y-4 mt-4">
-            {displayedExercises?.map((exercise) => (
+            {progressionChartsData?.map((chartData) => (
               <ProgressionChart
-                key={exercise.id}
-                name={exercise.name}
-                workouts={exercise.workouts}
+                key={chartData.id}
+                name={chartData.name}
+                workouts={chartData.workouts}
               />
             ))}
           </div>
@@ -542,12 +564,10 @@ const CustomChartLabel = ({ x, y, index, chartData, type }: CustomChartLabelProp
   );
 };
 
-
 interface ProgressionChartProps {
   name: string;
   workouts: Workout[];
 }
-
 
 function ProgressionChart({ name, workouts }: ProgressionChartProps) {
   const {
@@ -653,13 +673,11 @@ function ProgressionChart({ name, workouts }: ProgressionChartProps) {
       : "#f87171";
 
   let evolutionLabelText;
-  if (Math.abs(totalEvolutionPercentage) <= 5) {
+  if (totalEvolutionPercentage >= -3 && totalEvolutionPercentage <= 0) {
     evolutionLabelText = "Desempenho: Constante";
   } else {
     const sign = totalEvolutionPercentage > 0 ? "+" : "";
-    evolutionLabelText = `Desempenho: ${sign}${totalEvolutionPercentage.toFixed(
-      1
-    )}%`;
+    evolutionLabelText = `Desempenho: ${sign}${totalEvolutionPercentage.toFixed(1)}%`;
   }
 
   return (
@@ -694,7 +712,7 @@ function ProgressionChart({ name, workouts }: ProgressionChartProps) {
           />
           <Tooltip content={<CustomTooltip />} cursor={false} />
           <ReferenceLine y={0} stroke="hsl(var(--border))" strokeDasharray="3 3" />
-          
+
           <Area
             type="monotone"
             dataKey="percentage"
@@ -702,17 +720,17 @@ function ProgressionChart({ name, workouts }: ProgressionChartProps) {
             strokeWidth={2}
             fill="#3b82f6"
             fillOpacity={0.2}
-            y0={-100}
+            y0={minDomain}
           />
-          
-          <Scatter
-             dataKey="percentage"
-             fill="#3b82f6"
-             stroke="hsl(var(--card))"
-             strokeWidth={2}
-           />
 
-           <Scatter
+          <Scatter
+            dataKey="percentage"
+            fill="#3b82f6"
+            stroke="hsl(var(--card))"
+            strokeWidth={2}
+          />
+
+          <Scatter
             dataKey="percentage"
             fill="transparent"
             isAnimationActive={false}
