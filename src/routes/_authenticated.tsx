@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { isAuthenticated } from "../signals/authentication";
 import { signal } from "@preact/signals";
-import { ChevronsLeft, Dumbbell, GraduationCap } from "lucide-react";
+import { ChevronsLeft } from "lucide-react";
 import StudentsIcon from '@/../public/assets/icons/students.svg?react';
 import ExerciseIcon from '@/../public/assets/icons/exercise.svg?react';
 
