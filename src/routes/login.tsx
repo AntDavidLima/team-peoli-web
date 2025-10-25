@@ -86,7 +86,6 @@ function Login() {
 								class="px-4 text-white bg-gray-600 text-input h-12 border-[0.5px] border-[#C1C2C1] rounded p-1 drop-shadow-md focus:outline focus:outline-primary data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900"
 								id="email"
 								placeholder="seuemail@exemplo.com"
-								placeholderTextColor="#AAAAAA" 
 								data-invalid={errors.email}
 								{...register("email")}
 							/>
