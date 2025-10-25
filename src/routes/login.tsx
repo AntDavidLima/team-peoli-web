@@ -6,7 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { signal } from "@preact/signals";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { AxiosError } from "axios";
-import { Eye, EyeOff, Mail, RectangleEllipsis } from "lucide-react";
+import { EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import EmailIcon from '@/../public/assets/icons/email.svg?react';
@@ -109,7 +109,6 @@ function Login() {
 									class="px-4 text-white bg-gray-600 w-full h-12 border-[0.5px] border-[#C1C2C1] rounded p-1 drop-shadow-md focus:outline focus:outline-primary text-input text-xs data-[visible=true]:text-base data-[invalid]:outline data-[invalid]:outline-red-700 focus:data-[invalid]:outline-red-900 pr-8"
 									id="password"
 									type={passwordVisible.value ? "text" : "password"}
-									placeholderTextColor="#AAAAAA" 
 									placeholder="••••••••••••"
 									data-invalid={errors.password}
 									data-visible={passwordVisible.value}
